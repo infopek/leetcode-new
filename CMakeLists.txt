@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(LeetCode
     src/models/list_node.h
+    src/models/tree_node.h
 
     src/main.cpp
 )
