@@ -2,9 +2,12 @@
 #include "./models/tree_node.h"
 
 #include <algorithm>
+#include <cctype>
+#include <climits>
+#include <cmath>
 #include <iostream>
-#include <utility>
 #include <string>
+#include <utility>
 #include <vector>
 
 // https://leetcode.com/problems/remove-duplicates-from-sorted-list/
@@ -142,7 +145,7 @@ namespace p101
 // https://leetcode.com/problems/symmetric-tree/
 namespace p104
 {
-	int maxDepth(TreeNode* root) 
+	int maxDepth(TreeNode* root)
 	{
 		if (!root)
 			return 0;
@@ -162,22 +165,171 @@ namespace p108
 			return nullptr;
 
 		int mid = (right - left) / 2 + left;
+
 		TreeNode* root = new TreeNode(nums[mid]);
 		root->left = buildTree(nums, left, mid - 1);
 		root->right = buildTree(nums, mid + 1, right);
+
 		return root;
 	}
 
-	TreeNode* sortedArrayToBST(const std::vector<int>& nums) 
+	TreeNode* sortedArrayToBST(const std::vector<int>& nums)
 	{
 		TreeNode* root = buildTree(nums, 0, nums.size() - 1);
 		return root;
 	}
 }
 
+// https://leetcode.com/problems/balanced-binary-tree/
+namespace p110
+{
+	int getDepth(TreeNode* root, bool& isBalanced)
+	{
+		if (!root || !isBalanced)
+			return 0;
+
+		int leftHeight = 1 + getDepth(root->left, isBalanced);
+		int rightHeight = 1 + getDepth(root->right, isBalanced);
+		if (std::abs(leftHeight - rightHeight) > 1)
+			isBalanced = false;
+
+		return std::max(leftHeight, rightHeight);
+	}
+
+	bool isBalanced(TreeNode* root)
+	{
+		bool isBalanced = true;
+		int _ = getDepth(root, isBalanced);
+		return isBalanced;
+	}
+}
+
+// https://leetcode.com/problems/minimum-depth-of-binary-tree/
+namespace p111
+{
+	void minDepthDFS(TreeNode* node, int& minDepth, int currDepth)
+	{
+		if (!node)
+			return;
+		if (!node->left && !node->right)
+			minDepth = std::min(minDepth, currDepth);
+
+		minDepthDFS(node->left, minDepth, currDepth + 1);
+		minDepthDFS(node->right, minDepth, currDepth + 1);
+	}
+
+	int minDepth(TreeNode* root)
+	{
+		if (!root)
+			return 0;
+
+		int minDepth = INT_MAX;
+		minDepthDFS(root, minDepth, 1);
+		return minDepth;
+	}
+}
+
+// https://leetcode.com/problems/pascals-triangle/
+namespace p118
+{
+	std::vector<std::vector<int>> generate(int numRows)
+	{
+		std::vector<std::vector<int>> triangle(numRows);
+		for (size_t i = 0; i < static_cast<size_t>(numRows); i++)
+		{
+			triangle[i].resize(i + 1);
+
+			// First and last entry in a row is always 1
+			triangle[i][0] = 1;
+			triangle[i][i] = 1;
+			for (size_t j = 1; j < i; j++)
+			{
+				triangle[i][j] = triangle[i - 1][j - 1] + triangle[i - 1][j];
+			}
+		}
+
+		return triangle;
+	}
+}
+
+// https://leetcode.com/problems/pascals-triangle-ii/
+namespace p119
+{
+	std::vector<int> getRow(int rowIndex)
+	{
+		// Helper lambda to calculate n choose k
+		auto nCk = [](size_t n, size_t k) -> size_t {
+			if (k > n - k)
+				k = n - k;	// symmetry
+
+			size_t result = 1;
+			for (size_t i = 0; i < k; i++)
+			{
+				result *= (n - i);
+				result /= (i + 1);
+			}
+
+			return result;
+			};
+
+		size_t rowSize = static_cast<size_t>(rowIndex + 1);
+		std::vector<int> row(rowSize);
+
+		size_t mid = (rowSize % 2 == 0)
+			? rowSize / 2
+			: rowSize / 2 + 1;
+		for (size_t i = 0; i < mid; i++)
+		{
+			row[i] = nCk(rowSize - 1, i);
+			row[rowSize - i - 1] = row[i];
+		}
+
+		return row;
+	}
+}
+
+// https://leetcode.com/problems/valid-palindrome/
+namespace p125
+{
+	bool isPalindrome(const std::string& phrase)
+	{
+		int left = 0;
+		int right = phrase.size() - 1;
+		while (left < right)
+		{
+			while (left < right && !std::isalnum(phrase[left]))
+				++left;
+
+			while (left < right && !std::isalnum(phrase[right]))
+				--right;
+
+			if (left < right && std::tolower(phrase[left]) != std::tolower(phrase[right]))
+				return false;
+
+			++left;
+			--right;
+		}
+
+		return true;
+	}
+}
+
+// https://leetcode.com/problems/single-number/
+namespace p136
+{
+	int singleNumber(std::vector<int>& nums)
+	{
+		int sum = 0;
+		for (const auto n : nums)
+			sum ^= n;
+
+		return sum;
+	}
+}
+
 int main()
 {
-	const std::vector nums{ -10, -3, 0, 5, 9 };
-	TreeNode* tree = p108::sortedArrayToBST(nums);
+	std::vector nums{ 4, 1, 2, 1, 2 };
+	int res = p136::singleNumber(nums);
 
 }
