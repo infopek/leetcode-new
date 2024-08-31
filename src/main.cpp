@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -327,9 +328,218 @@ namespace p136
 	}
 }
 
+// https://leetcode.com/problems/linked-list-cycle/
+namespace p141
+{
+	bool hasCycle(ListNode* head)
+	{
+		ListNode* slow = head;
+		ListNode* fast = head;
+		while (fast && fast->next)
+		{
+			slow = slow->next;
+			fast = fast->next->next;
+
+			if (fast && slow == fast)
+				return true;
+		}
+
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/binary-tree-preorder-traversal/
+namespace p144
+{
+	void dfs(TreeNode* node, std::vector<int>& traversal)
+	{
+		if (!node)
+			return;
+
+		traversal.push_back(node->val);
+		dfs(node->left, traversal);
+		dfs(node->right, traversal);
+	}
+
+	std::vector<int> preorderTraversal(TreeNode* root)
+	{
+		std::vector<int> traversal{};
+		dfs(root, traversal);
+		return traversal;
+	}
+}
+
+// https://leetcode.com/problems/binary-tree-postorder-traversal/
+namespace p145
+{
+	void dfs(TreeNode* node, std::vector<int>& traversal)
+	{
+		if (!node)
+			return;
+
+		dfs(node->left, traversal);
+		dfs(node->right, traversal);
+		traversal.push_back(node->val);
+	}
+
+	std::vector<int> postorderTraversal(TreeNode* root)
+	{
+		std::vector<int> traversal{};
+		dfs(root, traversal);
+		return traversal;
+	}
+}
+
+// https://leetcode.com/problems/intersection-of-two-linked-lists/
+namespace p160
+{
+	int calcLength(ListNode* head)
+	{
+		ListNode* ptr = head;
+		int length = 0;
+		while (ptr)
+		{
+			++length;
+			ptr = ptr->next;
+		}
+
+		return length;
+	}
+
+	ListNode* getIntersectionNode(ListNode* headA, ListNode* headB)
+	{
+		int lengthA = calcLength(headA);
+		int lengthB = calcLength(headB);
+		int diff = std::abs(lengthA - lengthB);
+
+		ListNode* currA = headA;
+		ListNode* currB = headB;
+		if (lengthA >= lengthB)
+		{
+			while (currA && diff > 0)
+			{
+				currA = currA->next;
+				--diff;
+			}
+		}
+		else
+		{
+			while (currB && diff > 0)
+			{
+				currB = currB->next;
+				--diff;
+			}
+		}
+
+		while (currA && currB)
+		{
+			if (currA == currB)
+				return currA;
+			currA = currA->next;
+			currB = currB->next;
+		}
+
+		return nullptr;
+	}
+}
+
+// https://leetcode.com/problems/excel-sheet-column-title/
+namespace p168
+{
+	std::string convertToTitle(int columnNumber)
+	{
+		auto log = [](double x, double base) -> double
+			{
+				return std::log(x) / std::log(base);
+			};
+
+		const int alphabetLength = 26;
+		double operand = (alphabetLength - 1) * static_cast<double>(columnNumber) + 1;
+		int titleLength = static_cast<int>(std::floor(log(operand, alphabetLength)));
+		std::string title{};
+		title.resize(titleLength);
+
+		int idx = titleLength - 1;
+		while (idx >= 0)
+		{
+			--columnNumber;
+			int div = columnNumber / alphabetLength;
+			int rem = columnNumber % alphabetLength;
+			title[idx] = 'A' + rem;
+
+			columnNumber = div;
+			--idx;
+		}
+
+		return title;
+	}
+}
+
+// https://leetcode.com/problems/majority-element/
+namespace p169
+{
+	int majorityElement(std::vector<int>& nums)
+	{
+		std::unordered_map<int, int> seen{};
+		const int majorityCount = nums.size() / 2;
+		for (const auto n : nums)
+		{
+			++seen[n];
+			if (seen[n] > majorityCount)
+				return n;
+		}
+
+		return -1;
+	}
+
+	int majorityElement2(std::vector<int>& nums)
+	{
+		int candidate = nums[0];
+		int count = 1;
+		for (size_t i = 1; i < nums.size(); i++)
+		{
+			if (count == 0)
+			{
+				candidate = nums[i];
+				++count;
+			}
+			else if (nums[i] == candidate)
+			{
+				++count;
+			}
+			else
+			{
+				--count;
+			}
+		}
+
+		return candidate;
+	}
+}
+
+// https://leetcode.com/problems/excel-sheet-column-number/
+namespace p171
+{
+	int titleToNumber(const std::string& columnTitle)
+	{
+		const int alphabetLength = 26;
+
+		int num = 0;
+		int place = std::powl(alphabetLength, columnTitle.length() - 1);
+		for (auto it = columnTitle.begin(); it != columnTitle.end(); ++it)
+		{
+			int n = (*it - 'A' + 1) * place;
+			num += n;
+
+			place /= alphabetLength;
+		}
+
+		return num;
+	}
+}
+
 int main()
 {
-	std::vector nums{ 4, 1, 2, 1, 2 };
-	int res = p136::singleNumber(nums);
-
+	std::string s = "ZY";
+	int res = p171::titleToNumber(s);
 }
