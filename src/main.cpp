@@ -2,9 +2,12 @@
 #include "./models/tree_node.h"
 
 #include <algorithm>
+#include <bit>
+#include <bitset>
 #include <cctype>
 #include <climits>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <unordered_map>
@@ -494,6 +497,7 @@ namespace p169
 
 	int majorityElement2(std::vector<int>& nums)
 	{
+		// Boyer-Moore voting algorithm: https://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_majority_vote_algorithm
 		int candidate = nums[0];
 		int count = 1;
 		for (size_t i = 1; i < nums.size(); i++)
@@ -538,8 +542,176 @@ namespace p171
 	}
 }
 
+// https://leetcode.com/problems/reverse-bits/
+namespace p190
+{
+	uint32_t reverseBits(uint32_t n)
+	{
+		unsigned s = 8 * sizeof(n);	// 8 bits in a byte
+		s >>= 1;	// half will be needed for first iteration involving mask
+
+		uint32_t mask = ~0;
+		while (s > 0)
+		{
+			mask ^= mask << s;
+			n = ((n >> s) & mask) | ((n << s) & ~mask);
+
+			s >>= 1;
+		}
+
+		return n;
+	}
+}
+
+// https://leetcode.com/problems/number-of-1-bits/
+namespace p191
+{
+	int hammingWeight(int n)
+	{
+		std::bitset<32> bits(n);
+		return bits.count();
+	}
+
+	int hammingWeight2(int n)
+	{
+		uint32_t mask = 1 << (8 * sizeof(n) - 1);
+		int count = 0;
+		while (mask > 0)
+		{
+			if ((n & mask) != 0)
+				++count;
+
+			mask >>= 1;
+		}
+
+		return count;
+	}
+
+	int hammingWeight3(int n)
+	{
+		int count = 0;
+		while (n != 0)
+		{
+			++count;
+			n &= (n - 1);	// flip least significant bit
+		}
+		return count;
+	}
+}
+
+// https://leetcode.com/problems/happy-number/
+namespace p202
+{
+	int squareSum(int n)
+	{
+		int sum = 0;
+		while (n != 0)
+		{
+			int digit = n % 10;
+			sum += digit * digit;
+			n /= 10;
+		}
+
+		return sum;
+	}
+
+	bool isHappy(int n)
+	{
+		std::unordered_map<int, bool> seen{};
+		while (n != 1)
+		{
+			int sum = squareSum(n);
+
+			if (seen[sum])
+				return false;
+
+			seen[sum] = true;
+			n = sum;
+		}
+
+		return true;
+	}
+
+	bool isHappy2(int n)
+	{
+		int slow = squareSum(n);
+		int fast = squareSum(squareSum(n));
+		while (slow != fast && fast != 1)
+		{
+			slow = squareSum(slow);
+			fast = squareSum(squareSum(fast));
+		}
+
+		return fast == 1;
+	}
+}
+
+// https://leetcode.com/problems/remove-linked-list-elements/
+namespace p203
+{
+	ListNode* removeElements(ListNode* head, int val)
+	{
+		// Delete from front first
+		while (head && head->val == val)
+			head = head->next;
+
+		// Process rest of the list
+		ListNode* prev = head;
+		ListNode* curr = head;
+		while (curr)
+		{
+			while (curr && curr->val == val)
+			{
+				// Unlink
+				prev->next = curr->next;
+				curr = curr->next;
+			}
+
+			if (curr)
+			{
+				prev = curr;
+				curr = curr->next;
+			}
+		}
+
+		return head;
+	}
+}
+
+// https://leetcode.com/problems/contains-duplicate/
+namespace p217
+{
+	bool containsDuplicate(std::vector<int>& nums)
+	{
+		std::unordered_map<int, int> count{};
+		for (const auto n : nums)
+		{
+			++count[n];
+			if (count[n] >= 2)
+				return true;
+		}
+
+		return false;
+	}
+
+	bool containsDuplicate2(std::vector<int>& nums)
+	{
+		std::unordered_map<int, int> count{};
+		for (const auto n : nums)
+		{
+			++count[n];
+			if (count[n] >= 2)
+				return true;
+		}
+
+		return false;
+	}
+}
+
 int main()
 {
-	std::string s = "ZY";
-	int res = p171::titleToNumber(s);
+	for (int i = 1; i < 1000; i++)
+	{
+		std::cout << i << ": " << p202::isHappy2(i) << '\n';
+	}
 }
