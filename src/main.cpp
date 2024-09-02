@@ -9,6 +9,9 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <queue>
+#include <stack>
+#include <stdlib.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -693,25 +696,411 @@ namespace p217
 
 		return false;
 	}
+}
 
-	bool containsDuplicate2(std::vector<int>& nums)
+// https://leetcode.com/problems/count-complete-tree-nodes/
+namespace p222
+{
+	void dfs(TreeNode* node, int& count)
 	{
-		std::unordered_map<int, int> count{};
-		for (const auto n : nums)
+		if (!node)
+			return;
+
+		++count;
+		dfs(node->left, count);
+		dfs(node->right, count);
+	}
+
+	int countNodes(TreeNode* root)
+	{
+		int count = 0;
+		dfs(root, count);
+		return count;
+	}
+
+	int countNodes2(TreeNode* root)
+	{
+		if (!root)
+			return;
+
+		int leftCount = countNodes(root->left);
+		int rightCount = countNodes(root->right);
+		return leftCount + rightCount + 1;
+	}
+
+	int countNodes3(TreeNode* root)
+	{
+		if (!root)
+			return 0;
+
+		TreeNode* left = root;
+		TreeNode* right = root;
+		int leftHeight = 0;
+		int rightHeight = 0;
+		while (left)
 		{
-			++count[n];
-			if (count[n] >= 2)
-				return true;
+			++leftHeight;
+			left = left->left;
+		}
+		while (right)
+		{
+			++rightHeight;
+			right = right->right;
 		}
 
-		return false;
+		if (leftHeight == rightHeight)
+			return (1 << leftHeight) - 1;	// 2^h - 1
+
+		return 1 + countNodes3(root->left) + countNodes3(root->right);
+	}
+}
+
+// https://leetcode.com/problems/implement-stack-using-queues/
+namespace p225
+{
+	class MyStack1 
+	{
+	public:
+		MyStack1() 
+		{
+
+		}
+
+		void push(int x) 
+		{
+			while (!m_queue1.empty())
+			{
+				m_queue2.push(m_queue1.front());
+				m_queue1.pop();
+			}
+			m_queue1.push(x);
+			while (!m_queue2.empty())
+			{
+				m_queue1.push(m_queue2.front());
+				m_queue2.pop();
+			}
+		}
+
+		int pop() 
+		{
+			int top = m_queue1.front();
+			m_queue1.pop();
+			return top;
+		}
+
+		int top() 
+		{
+			return m_queue1.front();
+		}
+
+		bool empty() 
+		{
+			return m_queue1.empty();
+		}
+
+	private:
+		std::queue<int> m_queue1{};
+		std::queue<int> m_queue2{};
+	};
+
+	class MyStack2
+	{
+	public:
+		MyStack2()
+		{
+
+		}
+
+		void push(int x)
+		{
+			m_queue.push(x);
+			for (size_t i = 0; i < m_queue.size() - 1; i++)
+			{
+				m_queue.push(m_queue.front());
+				m_queue.pop();
+			}
+		}
+
+		int pop()
+		{
+			int top = m_queue.front();
+			m_queue.pop();
+			return top;
+		}
+
+		int top()
+		{
+			return m_queue.front();
+		}
+
+		bool empty()
+		{
+			return m_queue.empty();
+		}
+
+	private:
+		std::queue<int> m_queue{};
+	};
+}
+
+// https://leetcode.com/problems/invert-binary-tree/
+namespace p226
+{
+	void invertDFS(TreeNode* node)
+	{
+		if (!node)
+			return;
+
+		invertDFS(node->left);
+		invertDFS(node->right);
+		std::swap(node->left, node->right);
+	}
+
+	TreeNode* invertTree(TreeNode* root) 
+	{
+		invertDFS(root);
+		return root;
+	}
+}
+
+// https://leetcode.com/problems/summary-ranges/description/
+namespace p228
+{
+	std::vector<std::string> summaryRanges(std::vector<int>& nums) 
+	{
+		const size_t size = nums.size();
+
+		std::vector<std::string> ranges{};
+		size_t left = 0;
+		size_t right = 0;
+		while (right < size)
+		{
+			while (right < size - 1 && nums[right] + 1 == nums[right + 1])
+				++right;
+
+			std::string range = (left != right)
+				? std::to_string(nums[left]) + "->" + std::to_string(nums[right])
+				: std::to_string(nums[left]);
+			ranges.push_back(range);
+
+			++right;
+			left = right;
+		}
+
+		return ranges;
+	}
+}
+
+// https://leetcode.com/problems/power-of-two/
+namespace p231
+{
+	bool isPowerOfTwo(int n)
+	{
+		if (n <= 0)
+			return false;
+
+		int count = 0;
+		while (n > 0 && count < 2)
+		{
+			count += (n & 1);
+			n >>= 1;
+		}
+
+		return count == 1;
+	}
+
+	bool isPowerOfTwo2(int n)
+	{
+		return (n > 0) && ((n - 1) & n) == 0;
+	}
+}
+
+namespace p232
+{
+	class MyQueue 
+	{
+	public:
+		MyQueue() 
+		{
+
+		}
+
+		void push(int x) 
+		{
+			while (!m_stack1.empty())
+			{
+				m_stack2.push(m_stack1.top());
+				m_stack1.pop();
+			}
+			m_stack1.push(x);
+			while (!m_stack2.empty())
+			{
+				m_stack1.push(m_stack2.top());
+				m_stack2.pop();
+			}
+		}
+
+		int pop() 
+		{
+			int front = m_stack1.top();
+			m_stack1.pop();
+			return front;
+		}
+
+		int peek() 
+		{
+			return m_stack1.top();
+		}
+
+		bool empty() 
+		{
+			return m_stack1.empty();
+		}
+
+	private:
+		std::stack<int> m_stack1{};
+		std::stack<int> m_stack2{};
+	};
+
+	class MyQueue2
+	{
+	public:
+		MyQueue2()
+		{
+
+		}
+
+		void push(int x)
+		{
+			m_stack1.push(x);
+		}
+
+		int pop()
+		{
+			if (m_stack2.empty())
+			{
+				while (!m_stack1.empty())
+				{
+					m_stack2.push(m_stack1.top());
+					m_stack1.pop();
+				}
+			}
+
+			int front = m_stack2.top();
+			m_stack2.pop();
+			return front;
+		}
+
+		int peek()
+		{
+			if (m_stack2.empty())
+			{
+				while (!m_stack1.empty())
+				{
+					m_stack2.push(m_stack1.top());
+					m_stack1.pop();
+				}
+			}
+
+			return m_stack2.top();
+		}
+
+		bool empty()
+		{
+			return m_stack1.empty() && m_stack2.empty();
+		}
+
+	private:
+		std::stack<int> m_stack1{};
+		std::stack<int> m_stack2{};
+	};
+}
+
+// https://leetcode.com/problems/valid-anagram/
+namespace p242
+{
+	bool isAnagram(std::string& s, std::string& t)
+	{
+		std::sort(s.begin(), s.end());
+		std::sort(t.begin(), t.end());
+		return s == t;
+	}
+
+	std::vector<int> getLetterCount(const std::string& str)
+	{
+		const size_t alphabetSize = 26;
+		std::vector<int> count(alphabetSize);
+		for (const auto c : str)
+			++count[c - static_cast<size_t>('a')];
+
+		return count;
+	}
+
+	bool isAnagram2(const std::string& s, const std::string& t)
+	{
+		std::vector<int> sCount = getLetterCount(s);
+		std::vector<int> tCount = getLetterCount(t);
+		return sCount == tCount;
+	}
+}
+
+// https://leetcode.com/problems/binary-tree-paths/
+namespace p257
+{
+	void collectPathsDFS(TreeNode* node, std::vector<std::string>& paths, const std::string& currPath = "")
+	{
+		if (!node)
+			return;
+
+		std::string path{ currPath + std::to_string(node->val) };
+		if (!node->left && !node->right)
+			paths.push_back(path);
+
+		path += "->";
+		collectPathsDFS(node->left, paths, path);
+		collectPathsDFS(node->right, paths, path);
+	}
+
+	std::vector<std::string> binaryTreePaths(TreeNode* root)
+	{
+		std::vector<std::string> paths{};
+		collectPathsDFS(root, paths);
+		return paths;
+	}
+}
+
+// https://leetcode.com/problems/add-digits/
+namespace p258
+{
+	int addDigits(int num)
+	{
+		while (num > 9)
+		{
+			int sum = 0;
+			while (num != 0)
+			{
+				sum += num % 10;
+				num /= 10;
+			}
+
+			num = sum;
+		}
+
+		return num;
+	}
+
+	int addDigits2(int num)
+	{
+		if (num == 0)
+			return 0;
+		else if (num % 9 == 0)
+			return 9;
+
+		return num % 9;
 	}
 }
 
 int main()
 {
-	for (int i = 1; i < 1000; i++)
-	{
-		std::cout << i << ": " << p202::isHappy2(i) << '\n';
-	}
+	
 }
