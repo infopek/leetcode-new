@@ -10,10 +10,13 @@
 #include <cstdint>
 #include <iostream>
 #include <queue>
+#include <ranges>
 #include <stack>
 #include <stdlib.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -721,7 +724,7 @@ namespace p222
 	int countNodes2(TreeNode* root)
 	{
 		if (!root)
-			return;
+			return 0;
 
 		int leftCount = countNodes(root->left);
 		int rightCount = countNodes(root->right);
@@ -758,15 +761,15 @@ namespace p222
 // https://leetcode.com/problems/implement-stack-using-queues/
 namespace p225
 {
-	class MyStack1 
+	class MyStack1
 	{
 	public:
-		MyStack1() 
+		MyStack1()
 		{
 
 		}
 
-		void push(int x) 
+		void push(int x)
 		{
 			while (!m_queue1.empty())
 			{
@@ -781,19 +784,19 @@ namespace p225
 			}
 		}
 
-		int pop() 
+		int pop()
 		{
 			int top = m_queue1.front();
 			m_queue1.pop();
 			return top;
 		}
 
-		int top() 
+		int top()
 		{
 			return m_queue1.front();
 		}
 
-		bool empty() 
+		bool empty()
 		{
 			return m_queue1.empty();
 		}
@@ -856,7 +859,7 @@ namespace p226
 		std::swap(node->left, node->right);
 	}
 
-	TreeNode* invertTree(TreeNode* root) 
+	TreeNode* invertTree(TreeNode* root)
 	{
 		invertDFS(root);
 		return root;
@@ -866,7 +869,7 @@ namespace p226
 // https://leetcode.com/problems/summary-ranges/description/
 namespace p228
 {
-	std::vector<std::string> summaryRanges(std::vector<int>& nums) 
+	std::vector<std::string> summaryRanges(std::vector<int>& nums)
 	{
 		const size_t size = nums.size();
 
@@ -917,15 +920,15 @@ namespace p231
 
 namespace p232
 {
-	class MyQueue 
+	class MyQueue
 	{
 	public:
-		MyQueue() 
+		MyQueue()
 		{
 
 		}
 
-		void push(int x) 
+		void push(int x)
 		{
 			while (!m_stack1.empty())
 			{
@@ -940,19 +943,19 @@ namespace p232
 			}
 		}
 
-		int pop() 
+		int pop()
 		{
 			int front = m_stack1.top();
 			m_stack1.pop();
 			return front;
 		}
 
-		int peek() 
+		int peek()
 		{
 			return m_stack1.top();
 		}
 
-		bool empty() 
+		bool empty()
 		{
 			return m_stack1.empty();
 		}
@@ -1100,7 +1103,641 @@ namespace p258
 	}
 }
 
+// https://leetcode.com/problems/ugly-number/
+namespace p263
+{
+	bool isUgly(int n)
+	{
+		if (n <= 0)
+			return false;
+
+		int factors[]{ 2, 3, 5 };
+		for (const auto factor : factors)
+		{
+			while (n != 1 && n % factor == 0)
+				n /= factor;
+		}
+
+		return n == 1;
+	}
+}
+
+// https://leetcode.com/problems/missing-number/
+namespace p268
+{
+	// Solution 1: Sum of first n natural numbers formula
+	int missingNumber(const std::vector<int>& nums)
+	{
+		const int size = nums.size();
+		int sum = size * (size + 1) / 2;
+		for (const auto n : nums)
+			sum -= n;
+
+		return sum;
+	}
+}
+
+// https://leetcode.com/problems/move-zeroes
+namespace p283
+{
+	// Solution 1: left and right pointers
+	void moveZeroes(std::vector<int>& nums)
+	{
+		const int size = static_cast<int>(nums.size());
+
+		int left = 0;
+		while (left < size)
+		{
+			while (left < size && nums[left] != 0)
+				++left;
+
+			int right = left + 1;
+			while (right < size && nums[right] == 0)
+				++right;
+
+			if (right < size)
+				std::swap(nums[left], nums[right]);
+
+			++left;
+		}
+	}
+
+	// Solution 2: more efficient two pointer
+	void moveZeroes2(std::vector<int>& nums)
+	{
+		int left = 0;
+		for (int right = 0; right < nums.size(); right++)
+		{
+			if (nums[right] != 0)
+			{
+				std::swap(nums[left], nums[right]);
+				++left;
+			}
+		}
+	}
+}
+
+// https://leetcode.com/problems/word-pattern/
+namespace p290
+{
+	std::vector<std::string> split(const std::string& str, const std::string& delim)
+	{
+		std::vector<std::string> result;
+		size_t start = 0;
+
+		for (size_t found = str.find(delim); found != std::string::npos; found = str.find(delim, start))
+		{
+			result.emplace_back(str.begin() + start, str.begin() + found);
+			start = found + delim.size();
+		}
+		if (start != str.size())
+			result.emplace_back(str.begin() + start, str.end());
+		return result;
+	}
+
+	bool wordPattern(const std::string& pattern, const std::string& s)
+	{
+		std::unordered_map<char, std::string> charToString{};
+		std::unordered_map<std::string, char> stringToChar{};
+		std::vector<std::string> words = split(s, " ");
+
+		const size_t length = s.length();
+		size_t i = 0;
+		for (const auto c : pattern)
+		{
+			std::string word = (i < words.size())
+				? words[i]
+				: "";
+			auto it1 = charToString.find(c);
+			auto it2 = stringToChar.find(word);
+			if (it1 != charToString.end() && it2 != stringToChar.end())
+			{
+				if (it1->second != word || it2->second != c)
+					return false;
+			}
+			else if (it1 == charToString.end() && it2 == stringToChar.end())
+			{
+				charToString[c] = word;
+				stringToChar[word] = c;
+			}
+			else if (it1 != charToString.end() || it2 != stringToChar.end())
+			{
+				return false;
+			}
+
+			++i;
+		}
+
+		return i == words.size();
+	}
+}
+
+// https://leetcode.com/problems/nim-game/
+namespace p292
+{
+	bool canWinNim(int n)
+	{
+		return n % 4 != 0;
+	}
+}
+
+// https://leetcode.com/problems/range-sum-query-immutable/
+namespace p303
+{
+	// Solution 1: naive / iterative
+	class NumArray
+	{
+	public:
+		NumArray(const std::vector<int>& nums)
+			: m_nums{ nums }
+		{
+		}
+
+		int sumRange(int left, int right)
+		{
+			int sum = 0;
+			for (int i = left; i <= right; i++)
+				sum += m_nums[i];
+
+			return sum;
+		}
+
+	private:
+		std::vector<int> m_nums{};
+	};
+
+	// Solution 1: caching (TLE)
+	class NumArray2
+	{
+	public:
+		NumArray2(const std::vector<int>& nums)
+			: m_nums{ nums }
+		{
+		}
+
+		int sumRange(int left, int right)
+		{
+			if (auto it = m_cache.find(std::to_string(left) + std::to_string(right)); it != m_cache.end())
+			{
+				return m_cache[std::to_string(left) + std::to_string(right)];
+			}
+			else if (right - left == 1)
+			{
+				m_cache[std::to_string(left) + std::to_string(right)] = m_nums[left] + m_nums[right];
+				return m_nums[left] + m_nums[right];
+			}
+			else if (left == right)
+			{
+				return m_nums[left];
+			}
+
+			int mid = left + (right - left) / 2;
+			return sumRange(left, mid - 1) + sumRange(mid, right);
+		}
+
+	private:
+		std::vector<int> m_nums{};
+		std::unordered_map<std::string, int> m_cache{};
+	};
+
+	// Solution 3: prefix sum
+	class NumArray3
+	{
+	public:
+		NumArray3(const std::vector<int>& nums)
+		{
+			m_nums.resize(nums.size() + 1);
+			m_nums[0] = 0;
+			for (size_t i = 1; i < nums.size() + 1; i++)
+				m_nums[i] = m_nums[i - 1] + nums[i - 1];
+		}
+
+		int sumRange(int left, int right)
+		{
+			return  m_nums[right] - m_nums[left - 1];
+		}
+
+	private:
+		std::vector<int> m_nums{};
+	};
+}
+
+// https://leetcode.com/problems/power-of-three/
+namespace p326
+{
+	// Solution 1: divide until 1
+	bool isPowerOfThree(int n)
+	{
+		if (n <= 0)
+			return false;
+
+		while (n % 3 == 0)
+			n /= 3;
+
+		return n == 1;
+	}
+
+	// Solution 2: largest power of 3 in 32-bit int
+	bool isPowerOfThree2(int n)
+	{
+		const int largestPowThree = 1162261467;
+		return n >= 0 && largestPowThree % n == 0;
+	}
+}
+
+// https://leetcode.com/problems/counting-bits/
+namespace p338
+{
+	// Solution 1: pop least significant bit
+	std::vector<int> countBits(int n)
+	{
+		std::vector<int> bits(n + 1);
+		for (int i = 0; i <= n; i++)
+		{
+			int count = 0;
+			int j = i;
+			while (j != 0)
+			{
+				j &= j - 1;
+				++count;
+			}
+
+			bits[i] = count;
+		}
+
+		return bits;
+	}
+
+	// Solution 2: checking shifted bit count (pseudo recursion)
+	std::vector<int> countBits(int n)
+	{
+		std::vector<int> bits(n + 1);
+		bits[0] = 0;
+		for (int i = 1; i <= n; i++)
+			bits[i] = bits[i / 2] + i % 2;
+
+		return bits;
+	}
+}
+
+// https://leetcode.com/problems/power-of-four/
+namespace p342
+{
+	bool isPowerOfFour(int n)
+	{
+		return n > 0
+			&& (n & 0xaaaaaaaa) == 0
+			&& (n & (n - 1)) == 0;
+	}
+}
+
+// https://leetcode.com/problems/reverse-string/
+namespace p344
+{
+	void reverseString(std::vector<char>& s)
+	{
+		int left = 0;
+		int right = s.size() - 1;
+		while (left < right)
+		{
+			std::swap(s[left], s[right]);
+			++left;
+			--right;
+		}
+	}
+}
+
+// https://leetcode.com/problems/reverse-vowels-of-a-string/
+namespace p345
+{
+	bool isVowel(char c)
+	{
+		c = std::tolower(c);
+		return c == 'a'
+			|| c == 'e'
+			|| c == 'i'
+			|| c == 'o'
+			|| c == 'u';
+	}
+
+	std::string reverseVowels(const std::string& s)
+	{
+		std::string result = s;
+		int left = 0;
+		int right = s.size() - 1;
+		while (left < right)
+		{
+			while (left < right && !isVowel(result[left]))
+				++left;
+
+			while (left < right && !isVowel(result[right]))
+				--right;
+
+			std::swap(result[left], result[right]);
+			++left;
+			--right;
+		}
+
+		return result;
+	}
+}
+
+// https://leetcode.com/problems/intersection-of-two-arrays/
+namespace p349
+{
+	// Solution 1: sorting, then bookish algo
+	std::vector<int> intersection(std::vector<int>& nums1, std::vector<int>& nums2)
+	{
+		std::sort(nums1.begin(), nums1.end());
+		std::sort(nums2.begin(), nums2.end());
+
+		std::unordered_map<int, bool> seen{};
+		std::vector<int> intersection{};
+		intersection.reserve(std::min(nums1.size(), nums2.size()));
+		int i = 0;
+		int j = 0;
+		while (i < nums1.size() && j < nums2.size())
+		{
+			if (nums1[i] < nums2[j])
+			{
+				++i;
+			}
+			else if (nums1[i] > nums2[j])
+			{
+				++j;
+			}
+			else
+			{
+				if (!seen[nums1[i]])
+				{
+					intersection.push_back(nums1[i]);
+					seen[nums1[i]] = true;
+				}
+
+				++i;
+				++j;
+			}
+		}
+
+		return intersection;
+	}
+
+	// Solution 2: unordered_set
+	std::vector<int> intersection2(const std::vector<int>& nums1, const std::vector<int>& nums2)
+	{
+		std::unordered_set<int> numsSet1(nums1.begin(), nums1.end());
+		std::unordered_set<int> intersectionSet{};
+		intersectionSet.reserve(std::min(nums1.size(), nums2.size()));
+		for (const int n : nums2)
+		{
+			if (numsSet1.count(n) != 0)
+				intersectionSet.insert(n);
+		}
+
+		return std::vector<int>(intersectionSet.begin(), intersectionSet.end());
+	}
+}
+
+// https://leetcode.com/problems/intersection-of-two-arrays-ii/
+namespace p350
+{
+	std::vector<int> intersect(std::vector<int>& nums1, std::vector<int>& nums2)
+	{
+		std::sort(nums1.begin(), nums1.end());
+		std::sort(nums2.begin(), nums2.end());
+
+		std::vector<int> intersection{};
+		intersection.reserve(std::min(nums1.size(), nums2.size()));
+		int i = 0;
+		int j = 0;
+		while (i < nums1.size() && j < nums2.size())
+		{
+			if (nums1[i] < nums2[j])
+			{
+				++i;
+			}
+			else if (nums1[i] > nums2[j])
+			{
+				++j;
+			}
+			else
+			{
+				intersection.push_back(nums1[i]);
+
+				++i;
+				++j;
+			}
+		}
+
+		return intersection;
+	}
+}
+
+// https://leetcode.com/problems/valid-perfect-square/
+namespace p367
+{
+	// Solution 1: brute force
+	bool isPerfectSquare(int num)
+	{
+		double start = (num % 2 == 0) ? 2 : 1;
+		for (double i = start; i <= num / i; i += 2)
+		{
+			if (i == num / i)
+				return true;
+		}
+
+		return false;
+	}
+
+	// Solution 2: binary search
+	bool isPerfectSquare2(int num)
+	{
+		int left = 0;
+		int right = num;
+		while (left <= right)
+		{
+			int mid = left + (right - left) / 2;
+			long square = static_cast<long>(mid) * mid;
+			if (square < num)
+				left = mid + 1;
+			else if (square > num)
+				right = mid - 1;
+			else
+				return true;
+		}
+
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/first-unique-character-in-a-string/
+namespace p387
+{
+	// Solution 1: two hashmaps
+	int firstUniqChar(const std::string& s)
+	{
+		std::unordered_map<char, int> count{};
+		std::unordered_map<char, int> indices{};
+		for (int i = 0; i < s.size(); ++i)
+		{
+			char c = s[i];
+			if (auto it = indices.find(c); it == indices.end())
+				indices[c] = i;
+
+			++count[c];
+		}
+
+		for (const auto c : s)
+		{
+			if (count[c] == 1)
+				return indices[c];
+		}
+
+		return -1;
+	}
+
+	// solution 2: queue
+	int firstUniqChar2(const std::string& s)
+	{
+		std::unordered_map<char, int> freq{};
+		std::queue<int> indices{};
+		for (int i = 0; i < s.size(); ++i)
+		{
+			++freq[s[i]];
+			if (freq[s[i]] == 1)
+				indices.push(i);
+		}
+
+		while (!indices.empty())
+		{
+			int i = indices.front();
+			indices.pop();
+			if (freq[s[i]] == 1)
+				return i;
+		}
+
+		return -1;
+	}
+
+	// Solution 3: one hashmap
+	int firstUniqChar3(const std::string& s)
+	{
+		std::unordered_map<char, int> freq{};
+		for (const auto c : s)
+			++freq[c];
+
+		for (size_t i = 0; i < s.size(); i++)
+		{
+			if (freq[s[i]] == 1)
+				return i;
+		}
+
+		return -1;
+	}
+
+	// Solution 4: array
+	int firstUniqChar4(const std::string& s)
+	{
+		const size_t alphabetSize = 26;
+		int freq[alphabetSize]{};
+		for (const auto c : s)
+			++freq[c - 'a'];
+
+		for (size_t i = 0; i < s.size(); i++)
+		{
+			if (freq[s[i] - 'a'] == 1)
+				return i;
+		}
+
+		return -1;
+	}
+}
+
+// https://leetcode.com/problems/find-the-difference/
+namespace p389
+{
+	// Solution 1: two hashmaps
+	char findTheDifference(const std::string& s, const std::string& t)
+	{
+		std::unordered_map<char, int> sLetters{};
+		std::unordered_map<char, int> tLetters{};
+		for (const auto c : s)
+			++sLetters[c];
+		for (const auto c : t)
+			++tLetters[c];
+
+		for (const auto c : t)
+		{
+			if (sLetters[c] != tLetters[c])
+				return c;
+		}
+
+		return '0';
+	}
+
+	// Solution 2: one hashmap
+	char findTheDifference2(const std::string& s, const std::string& t)
+	{
+		std::unordered_map<char, int> letters{};
+		for (const auto c : s)
+			++letters[c];
+		for (const auto c : t)
+			--letters[c];
+
+		for (const auto c : t)
+		{
+			if (letters[c] != 0)
+				return c;
+		}
+
+		return '0';
+	}
+
+	// Solution 3: array
+	char findTheDifference3(const std::string& s, const std::string& t)
+	{
+		const size_t alphabetSize = 26;
+		int freq[alphabetSize]{};
+		for (const auto c : s)
+			++freq[c - 'a'];
+		for (const auto c : t)
+			--freq[c - 'a'];
+
+		for (const auto c : t)
+		{
+			if (freq[c - 'a'] != 0)
+				return c;
+		}
+
+		return '0';
+	}
+
+	// Solution 4: diff propagation
+	char findTheDifference4(const std::string& s, std::string& t)
+	{
+		for (size_t i = 0; i < s.size(); i++)
+			t[i + 1] += t[i] - s[i];
+
+		return t[t.size() - 1];
+	}
+
+	// Solution 5: xor
+	char findTheDifference5(const std::string& s, const std::string& t)
+	{
+		char c = static_cast<char>(0);
+		for (size_t i = 0; i < s.size(); i++)
+		{
+			c ^= s[i];
+			c ^= t[i];
+		}
+		c ^= t[t.size() - 1];
+
+		return c;
+	}
+}
+
 int main()
 {
-	
+	p338::countBits(16);
 }
+
