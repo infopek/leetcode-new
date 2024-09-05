@@ -1369,7 +1369,7 @@ namespace p338
 	}
 
 	// Solution 2: checking shifted bit count (pseudo recursion)
-	std::vector<int> countBits(int n)
+	std::vector<int> countBits2(int n)
 	{
 		std::vector<int> bits(n + 1);
 		bits[0] = 0;
@@ -1736,8 +1736,139 @@ namespace p389
 	}
 }
 
+// https://leetcode.com/problems/binary-watch/
+namespace p401
+{
+	int countBits(int n)
+	{
+		int count = 0;
+		while (n != 0)
+		{
+			++count;
+			n &= (n - 1);
+		}
+
+		return count;
+	}
+
+	// Solution 1: bit counting
+	std::vector<std::string> readBinaryWatch(int turnedOn)
+	{
+		std::vector<std::string> times{};
+		for (int h = 0; h < 12; h++)
+		{
+			int hourBits = countBits(h);
+			if (hourBits <= turnedOn)
+			{
+				int remaining = turnedOn - hourBits;
+				for (int m = 0; m < 60; m++)
+				{
+					if (countBits(m) == remaining)
+					{
+						std::string time = std::to_string(h)
+							+ ((m < 10) ? ":0" : ":")
+							+ std::to_string(m);
+						times.push_back(time);
+					}
+				}
+			}
+		}
+
+		return times;
+	}
+
+	void backtrack(int idx, int hour, int minute, int remainingBits,
+		const std::vector<int>& hours, const std::vector<int>& minutes, std::vector<std::string>& times)
+	{
+		if (remainingBits == 0)
+		{
+			std::string time = std::to_string(hour)
+				+ ((minute < 10) ? ":0" : ":")
+				+ std::to_string(minute);
+			times.push_back(time);
+		}
+
+		for (int i = idx; i < hours.size() + minutes.size(); i++)
+		{
+			if (i < hours.size())
+			{
+				// Backtrack on hours
+				hour += hours[i];
+				if (hour < 12)
+					backtrack(i + 1, hour, minute, remainingBits - 1, hours, minutes, times);
+				hour -= hours[i];	// backtrack step
+			}
+			else
+			{
+				int minuteIdx = i - 4;
+				minute += minutes[minuteIdx];
+				if (minute < 60)
+					backtrack(i + 1, hour, minute, remainingBits - 1, hours, minutes, times);
+				minute -= minutes[minuteIdx];
+			}
+		}
+	}
+
+	// Solution 2: backtrack
+	std::vector<std::string> readBinaryWatch2(int turnedOn)
+	{
+		const std::vector<int> hours{ 1, 2, 4, 8 };
+		const std::vector<int> minutes{ 1, 2, 4, 8, 16, 32 };
+
+		std::vector<std::string> times{};
+		backtrack(0, 0, 0, turnedOn, hours, minutes, times);
+		return times;
+
+	}
+}
+
+// https://leetcode.com/problems/sum-of-left-leaves/
+namespace p404
+{
+	void dfs(TreeNode* node, int& sum, bool isLeft)
+	{
+		if (!node)
+			return;
+
+		if (!node->left && !node->right && isLeft)
+			sum += node->val;
+
+		dfs(node->left, sum, true);
+		dfs(node->right, sum, false);
+	}
+
+	int sumOfLeftLeaves(TreeNode* root)
+	{
+		int sum = 0;
+		dfs(root, sum, false);
+		return sum;
+	}
+}
+
+// https://leetcode.com/problems/convert-a-number-to-hexadecimal/
+namespace p405
+{
+	std::string toHex(int num) 
+	{
+		unsigned int n = static_cast<unsigned int>(num);
+		const char hexCodes[]{ '0', '1', '2', '3', '4' , '5' , '6' , '7' , '8' , '9' , 'a' , 'b' , 'c' , 'd' , 'e' , 'f' };
+
+		std::string hex{};
+		while (n != 0)
+		{
+			int remainder = n % 16;
+			n /= 16;
+
+			hex += hexCodes[remainder];
+		}
+
+		std::reverse(hex.begin(), hex.end());
+		return hex;
+	}
+}
+
 int main()
 {
-	p338::countBits(16);
+	std::cout << p405::toHex(-1);
 }
 
