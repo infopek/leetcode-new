@@ -1848,7 +1848,7 @@ namespace p404
 // https://leetcode.com/problems/convert-a-number-to-hexadecimal/
 namespace p405
 {
-	std::string toHex(int num) 
+	std::string toHex(int num)
 	{
 		unsigned int n = static_cast<unsigned int>(num);
 		const char hexCodes[]{ '0', '1', '2', '3', '4' , '5' , '6' , '7' , '8' , '9' , 'a' , 'b' , 'c' , 'd' , 'e' , 'f' };
@@ -1867,8 +1867,499 @@ namespace p405
 	}
 }
 
+// https://leetcode.com/problems/third-maximum-number/
+namespace p414
+{
+	int thirdMax(const std::vector<int>& nums)
+	{
+		int firstMaxIdx = 0;
+		int secondMaxIdx = -1;
+		int thirdMaxIdx = -1;
+		for (int i = 1; i < nums.size(); i++)
+		{
+			if (nums[i] > nums[firstMaxIdx])
+			{
+				thirdMaxIdx = secondMaxIdx;
+				secondMaxIdx = firstMaxIdx;
+				firstMaxIdx = i;
+			}
+			else if (nums[i] != nums[firstMaxIdx])
+			{
+				if (secondMaxIdx == -1)
+				{
+					secondMaxIdx = i;
+				}
+				else if (nums[i] > nums[secondMaxIdx])
+				{
+					thirdMaxIdx = secondMaxIdx;
+					secondMaxIdx = i;
+				}
+				else if (nums[i] != nums[secondMaxIdx])
+				{
+					if (thirdMaxIdx == -1 || nums[i] > nums[thirdMaxIdx])
+					{
+						thirdMaxIdx = i;
+					}
+				}
+			}
+		}
+
+		return (thirdMaxIdx != -1) ? nums[thirdMaxIdx] : nums[firstMaxIdx];
+	}
+}
+
+// https://leetcode.com/problems/add-strings/
+namespace p415
+{
+	std::string addStrings(const std::string& num1, const std::string& num2)
+	{
+		std::string rev1{ num1 };
+		std::string rev2{ num2 };
+		const int length1 = rev1.length();
+		const int length2 = rev2.length();
+
+		std::reverse(rev1.begin(), rev1.end());
+		std::reverse(rev2.begin(), rev2.end());
+
+		std::string result = (length1 >= length2) ? rev1 : rev2;
+		std::string other = (length1 >= length2) ? rev2 : rev1;
+		int i{};
+		int carry = 0;
+
+		// Perform addition using the two numbers
+		for (i = 0; i < other.length(); i++)
+		{
+			int a = result[i] - '0';
+			int b = other[i] - '0';
+			int sum = a + b + carry;
+			carry = sum >= 10;
+
+			result[i] = sum - carry * 10 + '0';
+		}
+
+		// Add carry to rest of existing digits
+		while (i < result.length())
+		{
+			int sum = result[i] + carry - '0';
+			carry = sum >= 10;
+			result[i] = sum - carry * 10 + '0';
+
+			++i;
+		}
+
+		if (carry)
+			result.push_back('1');
+
+		std::reverse(result.begin(), result.end());
+		return result;
+	}
+}
+
+// https://leetcode.com/problems/number-of-segments-in-a-string/
+namespace p434
+{
+	int countSegments(const std::string& str)
+	{
+		const int length = str.length();
+
+		int i = 0;
+		int numSegments = 0;
+		while (i < length)
+		{
+			// Skip spaces
+			while (i < length && str[i] == ' ')
+				++i;
+
+			// Non-space char found
+			if (i < length)
+				++numSegments;
+
+			// Skip until end of segment
+			while (i < length && str[i] != ' ')
+				++i;
+		}
+
+		return numSegments;
+	}
+}
+
+// https://leetcode.com/problems/arranging-coins/
+namespace p441
+{
+	// Solution 1: brute force
+	int arrangeCoins(int n)
+	{
+		int numCompleteRows = 0;
+		int coinsPerRow = 1;
+		while (n >= 0)
+		{
+			n -= coinsPerRow;
+			++coinsPerRow;
+			++numCompleteRows;
+		}
+
+		return numCompleteRows;
+	}
+
+	// Solution 2: math formula
+	int arrangeCoins2(int n)
+	{
+		return static_cast<int>(std::sqrt(2.0 * n + 0.25) - 0.5);
+	}
+
+	// Solution 3: bit manipulation
+	int arrangeCoins3(int n)
+	{
+		int mask = 1 << 15;
+		long result = 0;
+		while (mask != 0)
+		{
+			result |= mask;
+			if (result * (result + 1) / 2 > n)
+				result ^= mask;
+			mask >>= 1;
+		}
+
+		return result;
+	}
+
+	// Solution 4: binary search
+	int arrangeCoins4(int n)
+	{
+		int left = 0;
+		int right = n;
+		while (left < right)
+		{
+			long mid = left + (right - left) / 2;
+			long coins = mid * (mid + 1) / 2;
+			if (coins == n)
+				return static_cast<int>(coins);
+			else if (coins > n)
+				right = mid - 1;
+			else
+				left = mid + 1;
+		}
+
+		return 0;
+	}
+}
+
+// https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/
+namespace p448
+{
+	// Solution 1: hashmap
+	std::vector<int> findDisappearedNumbers(const std::vector<int>& nums)
+	{
+		std::unordered_map<int, bool> seen{};
+		for (const auto n : nums)
+			seen[n] = true;
+
+		std::vector<int> disappeared{};
+		for (int i = 1; i <= nums.size(); i++)
+			if (!seen[i])
+				disappeared.push_back(i);
+
+		return disappeared;
+	}
+
+	// Solution 2: indexing tricks
+	std::vector<int> findDisappearedNumbers2(std::vector<int>& nums)
+	{
+		const int n = nums.size();
+		for (int i = 0; i < n; i++)
+		{
+			int idx = nums[i] > 0 ? nums[i] - 1 : nums[i] + n - 1;
+			if (nums[idx] > 0)
+				nums[idx] -= n;
+		}
+
+		std::vector<int> disappeared{};
+		for (int i = 0; i < n; i++)
+			if (nums[i] > 0)
+				disappeared.push_back(i + 1);
+
+		return disappeared;
+	}
+
+	// Solution 3: abs
+	std::vector<int> findDisappearedNumbers3(std::vector<int>& nums)
+	{
+		for (const auto num : nums)
+		{
+			int idx = std::abs(num) - 1;
+			nums[idx] = -std::abs(nums[idx]);
+		}
+
+		std::vector<int> disappeared{};
+		for (int i = 0; i < nums.size(); i++)
+			if (nums[i] > 0)
+				disappeared.push_back(i + 1);
+
+		return disappeared;
+	}
+}
+
+// https://leetcode.com/problems/assign-cookies/
+namespace p455
+{
+	// Solution 1: sorting
+	int findContentChildren(std::vector<int>& greeds, std::vector<int>& sizes)
+	{
+		std::sort(greeds.begin(), greeds.end());
+		std::sort(sizes.begin(), sizes.end());
+
+		int i = 0;
+		int j = 0;
+		int content = 0;
+		while (i < greeds.size() && j < sizes.size())
+		{
+			if (sizes[j] >= greeds[i])
+			{
+				++content;
+				++i;
+				++j;
+			}
+			else
+			{
+				++j;
+			}
+		}
+
+		return content;
+	}
+}
+
+// https://leetcode.com/problems/repeated-substring-pattern/
+namespace p459
+{
+	// Solution 1: while loops
+	bool repeatedSubstringPattern(const std::string& str)
+	{
+		const int length = str.length();
+		const int halfLength = length / 2;
+
+		char first = str[0];
+		int patternLength = 1;
+		while (patternLength <= halfLength)
+		{
+			while (patternLength <= halfLength && str[patternLength] != first)
+				++patternLength;
+
+			std::string pattern = str.substr(0, patternLength);
+			std::cout << pattern;
+			if (patternLength != length && length % patternLength == 0)	// is candidate valid
+			{
+				int i = patternLength;
+				while (i <= length - patternLength && str.substr(i, patternLength) == pattern)
+					i += patternLength;
+
+				if (i == length)
+					return true;
+			}
+			++patternLength;
+		}
+
+		return false;
+	}
+
+	// Solution 2: starting at half length
+	bool repeatedSubstringPattern2(const std::string& str)
+	{
+		const int len = str.length();
+		for (int i = len / 2; i >= 1; --i)
+			if (len % i == 0 && str.substr(0, len - i) == str.substr(i))
+				return true;
+
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/hamming-distance/
+namespace p461
+{
+	int countBits(int n)
+	{
+		int count = 0;
+		while (n != 0)
+		{
+			n &= (n - 1);
+			++count;
+		}
+
+		return count;
+	}
+
+	int hammingDistance(int x, int y)
+	{
+		int diff = x ^ y;
+		return countBits(diff);
+	}
+}
+
+// https://leetcode.com/problems/island-perimeter/
+namespace p463
+{
+	int countLandNeighbors(const std::vector<std::vector<int>>& grid, int row, int col)
+	{
+		const std::pair<int, int> neighborCells[]{
+			{row - 1, col + 0},
+			{row + 0, col - 1},
+			{row + 0, col + 1},
+			{row + 1, col + 0}
+		};
+
+		int rows = grid.size();
+		int cols = grid[0].size();
+		int count = 0;
+		for (const auto& n : neighborCells)
+		{
+			if (n.first >= 0
+				&& n.first < rows
+				&& n.second >= 0
+				&& n.second < cols)
+			{
+				count += grid[n.first][n.second];	// 1 for land, 0 for water
+			}
+		}
+
+		return count;
+	}
+
+	// Solution 1: counting all neighbors
+	int islandPerimeter(const std::vector<std::vector<int>>& grid)
+	{
+		int perimeter = 0;
+		for (int r = 0; r < grid.size(); r++)
+		{
+			for (int c = 0; c < grid[0].size(); c++)
+			{
+				if (grid[r][c] == 1)
+				{
+					// Land
+					perimeter += 4 - countLandNeighbors(grid, r, c);
+				}
+			}
+
+		}
+
+		return perimeter;
+	}
+
+	int islandPerimeter2(const std::vector<std::vector<int>>& grid)
+	{
+		int count = 0;
+		int repeat = 0;
+		for (int i = 0; i < grid.size(); i++)
+		{
+			for (int j = 0; j < grid[0].size(); j++)
+			{
+				if (grid[i][j] == 1)
+				{
+					++count;
+					if (i != 0 && grid[i - 1][j] == 1)
+						++repeat;
+					if (j != 0 && grid[i][j - 1] == 1)
+						++repeat;
+				}
+			}
+		}
+
+		return 4 * count - 2 * repeat;
+	}
+}
+
+// https://leetcode.com/problems/number-complement/
+namespace p476
+{
+	int findComplement(int num)
+	{
+		unsigned int mask = 1;
+		while ((num & mask) != num)
+			mask |= (mask << 1);
+
+		return num ^ mask;
+	}
+}
+
+// https://leetcode.com/problems/license-key-formatting/
+namespace p482
+{
+	// Solution 1: insert dash every on every k-th index
+	std::string licenseKeyFormatting(const std::string& str, int k)
+	{
+		std::string formatted{};
+		formatted.reserve(str.length());
+		for (auto& c : str)
+			if (c != '-')
+				formatted.push_back(std::toupper(c));
+
+
+		for (int i = formatted.length() - k; i > 0; i -= k)
+			formatted.insert(formatted.begin() + i, '-');
+
+		return formatted;
+	}
+
+	// Solution 2: optimized
+	std::string licenseKeyFormatting2(const std::string& str, int k)
+	{
+		std::string alphanumOnly;
+		alphanumOnly.reserve(str.length());
+		for (auto& c : str)
+			if (c != '-')
+				alphanumOnly.push_back(std::toupper(c));
+
+		if (alphanumOnly.length() == 0)
+			return "";
+		const int dashes = (alphanumOnly.length() % k == 0) ? alphanumOnly.length() / k - 1 : alphanumOnly.length() / k;
+		const int length = alphanumOnly.length() + dashes;
+
+		std::string formatted{};
+		formatted.resize(length);
+		int j = alphanumOnly.length() - 1;
+		for (int i = length - 1; i >= 0; --i)
+		{
+			if ((length - i) % (k + 1) == 0)
+			{
+				formatted[i] = '-';
+			}
+			else
+			{
+				formatted[i] = alphanumOnly[j];
+				--j;
+			}
+		}
+
+		return formatted;
+	}
+}
+
+// https://leetcode.com/problems/max-consecutive-ones/
+namespace p485
+{
+	// Solution 1: iterate through whole array
+	int findMaxConsecutiveOnes(const std::vector<int>& nums)
+	{
+		const int size = nums.size();
+		int max = 0;
+		int idx = 0;
+		for (int i = 0; i < size; i++)
+		{
+			if (nums[i] == 0)
+			{
+				max = std::max(max, i - idx);
+				idx = i + 1;
+			}
+		}
+
+		max = std::max(max, size - idx);
+		return max;
+	}
+}
+
 int main()
 {
-	std::cout << p405::toHex(-1);
+	std::vector nums{ 1, 1, 0, 1, 1, 1 };
+	std::cout << p485::findMaxConsecutiveOnes(nums);
 }
 
