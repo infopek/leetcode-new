@@ -1,5 +1,6 @@
 #include "./models/list_node.h"
 #include "./models/tree_node.h"
+#include "./models/node.h"
 
 #include <algorithm>
 #include <bit>
@@ -9,6 +10,7 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <numeric>
 #include <queue>
 #include <ranges>
 #include <stack>
@@ -2146,7 +2148,6 @@ namespace p459
 				++patternLength;
 
 			std::string pattern = str.substr(0, patternLength);
-			std::cout << pattern;
 			if (patternLength != length && length % patternLength == 0)	// is candidate valid
 			{
 				int i = patternLength;
@@ -2357,9 +2358,1013 @@ namespace p485
 	}
 }
 
+// https://leetcode.com/problems/construct-the-rectangle/
+namespace p492
+{
+	// solution 1: loop through all factors
+	std::vector<int> constructRectangle(int area)
+	{
+		int length = area;
+		int width = 1;
+		for (int i = 2; i <= std::sqrt(area); i++)
+		{
+			if (area % i == 0)
+			{
+				width = i;
+				length = area / i;
+			}
+		}
+
+		return { length, width };
+	}
+
+	// Solution 2: start from square root
+	std::vector<int> constructRectangle2(int area)
+	{
+		for (int i = std::sqrt(area); i >= 1; --i)
+			if (area % i == 0)
+				return { area / i, i };
+
+		return { area, 1 };	// should not be reached
+	}
+}
+
+// https://leetcode.com/problems/teemo-attacking/
+namespace p495
+{
+	int findPoisonedDuration(const std::vector<int>& timeSeries, int duration)
+	{
+		int total = 0;
+		for (size_t i = 0; i < timeSeries.size() - 1; i++)
+		{
+			if (timeSeries[i] + duration <= timeSeries[i + 1])
+				total += duration;
+			else
+				total += timeSeries[i + 1] - timeSeries[i];
+		}
+
+		total += duration;
+		return total;
+	}
+}
+
+// https://leetcode.com/problems/next-greater-element-i/
+namespace p496
+{
+	// Solution 1: using a single map for storing indices only
+	std::vector<int> nextGreaterElement(const std::vector<int>& nums1, const std::vector<int>& nums2)
+	{
+		std::unordered_map<int, int> map{};
+		for (int j = 0; j < nums2.size(); j++)
+			map[nums2[j]] = j;
+
+		std::vector<int> res{};
+		for (int i = 0; i < nums1.size(); i++)
+		{
+			int j = map[nums1[i]];
+			int x = nums2[j];
+			int greater = -1;
+			while (j + 1 < nums2.size())
+			{
+				if (nums2[j + 1] > x)
+				{
+					greater = nums2[j + 1];
+					break;
+				}
+				++j;
+			}
+
+			res.push_back(greater);
+		}
+
+		return res;
+	}
+
+	// Solution 2: monotonic stack
+	std::vector<int> nextGreaterElement2(const std::vector<int>& nums1, const std::vector<int>& nums2)
+	{
+		std::unordered_map<int, int> map{};
+		std::stack<int> stack{};
+
+		for (const auto n : nums2)
+		{
+			while (!stack.empty() && n > stack.top())
+			{
+				int top = stack.top();
+				map[top] = n;
+				stack.pop();
+			}
+			stack.push(n);
+		}
+
+		std::vector<int> res{};
+		res.reserve(nums1.size());
+		for (const auto n : nums1)
+		{
+			auto it = map.find(n);
+			if (it != map.end())
+				res.push_back(it->second);
+			else
+				res.push_back(-1);
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/keyboard-row/
+namespace p500
+{
+	std::vector<std::string> findWords(const std::vector<std::string>& words)
+	{
+		// Fill keyboard
+		std::vector<std::unordered_map<char, int>> keyboard{};
+		keyboard.reserve(3);
+		for (const std::string& row : { "qwertyuiop", "asdfghjkl", "zxcvbnm" })
+		{
+			std::unordered_map<char, int> rowMap{};
+			for (const auto c : row)
+				rowMap[c] = 1;
+			keyboard.push_back(rowMap);
+		}
+
+		// Check a word with each of the rows
+		std::vector<std::string> res{};
+		for (const auto& word : words)
+		{
+			bool canBeTyped = false;
+			for (const auto& rowMap : keyboard)
+			{
+				canBeTyped = true;
+				for (const auto c : word)
+				{
+					if (rowMap.find(std::tolower(c)) == rowMap.end())
+						canBeTyped = false;
+				}
+
+				if (canBeTyped)
+					res.push_back(word);
+			}
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/find-mode-in-binary-search-tree/
+namespace p501
+{
+	void dfs(TreeNode* node, std::unordered_map<int, int>& freq, int& maxFreq)
+	{
+		if (!node)
+			return;
+
+		++freq[node->val];
+		maxFreq = std::max(maxFreq, freq[node->val]);
+		dfs(node->left, freq, maxFreq);
+		dfs(node->right, freq, maxFreq);
+	}
+
+	// Solution 1: using hashmap
+	std::vector<int> findMode(TreeNode* root)
+	{
+		std::unordered_map<int, int> freq{};
+		int maxFreq = 0;
+		dfs(root, freq, maxFreq);
+
+		std::vector<int> res{};
+		for (auto it = freq.begin(); it != freq.end(); ++it)
+			if (it->second == maxFreq)
+				res.push_back(it->first);
+
+		return res;
+	}
+
+	void dfs2(TreeNode* node, std::vector<int>& modes, int& mode, int& currFreq, int& maxFreq)
+	{
+		if (!node)
+			return;
+
+		dfs2(node->left, modes, mode, currFreq, maxFreq);
+
+		if (mode == node->val)
+		{
+			++currFreq;
+		}
+		else
+		{
+			mode = node->val;
+			currFreq = 1;
+		}
+
+		if (currFreq > maxFreq)
+		{
+			maxFreq = currFreq;
+			modes = { mode };
+		}
+		else if (currFreq == maxFreq)
+		{
+			modes.push_back(node->val);
+		}
+
+		dfs2(node->right, modes, mode, currFreq, maxFreq);
+	}
+
+	// Solution 2: inorder
+	std::vector<int> findMode2(TreeNode* root)
+	{
+		std::vector<int> modes{};
+		int currFreq = 0;
+		int maxFreq = 0;
+		int mode = INT_MIN;
+		dfs2(root, modes, mode, currFreq, maxFreq);
+
+		return modes;
+	}
+}
+
+// https://leetcode.com/problems/base-7/
+namespace p504
+{
+	std::string convertToBase7(int num)
+	{
+		if (num == 0)
+			return "0";
+
+		int n = std::abs(num);
+		std::string repr{};
+		while (n != 0)
+		{
+			repr += (n % 7 + '0');
+			n /= 7;
+		}
+
+		if (num < 0)
+			repr += '-';
+
+		std::reverse(repr.begin(), repr.end());
+		return repr;
+	}
+}
+
+// https://leetcode.com/problems/relative-ranks/
+namespace p506
+{
+	// Solution 1: sorting
+	std::vector<std::string> findRelativeRanks(std::vector<int>& scores)
+	{
+		const int n = scores.size();
+		std::unordered_map<int, int> originalPlaces{};
+		originalPlaces.reserve(n);
+		for (int i = 0; i < n; i++)
+			originalPlaces[scores[i]] = i;
+
+		std::sort(scores.begin(), scores.end(), std::greater<int>());
+		std::vector<std::string> ranks(n);
+		for (int i = 0; i < n; i++)
+		{
+			std::string rank{};
+			switch (i)
+			{
+			case 0:
+				rank = "Gold Medal";
+				break;
+			case 1:
+				rank = "Silver Medal";
+				break;
+			case 2:
+				rank = "Bronze Medal";
+				break;
+			default:
+				rank = std::to_string(i + 1);
+				break;
+			}
+
+			ranks[originalPlaces[scores[i]]] = rank;
+		}
+
+		return ranks;
+	}
+
+	// Solution 2: priority queue
+	std::vector<std::string> findRelativeRanks2(std::vector<int>& scores)
+	{
+		auto toRank = [](int placement) -> std::string {
+			switch (placement)
+			{
+			case 1:		return "Gold Medal";
+			case 2:		return "Silver Medal";
+			case 3:		return "Bronze Medal";
+			default:	return std::to_string(placement);
+			}
+			};
+
+		std::priority_queue<std::pair<int, int>> pq{};
+		const int n = scores.size();
+		for (int i = 0; i < n; i++)
+			pq.push({ scores[i], i });
+
+		std::vector<std::string> ranks(n);
+		for (int i = 1; i <= n; i++)
+		{
+			ranks[pq.top().second] = toRank(i);
+			pq.pop();
+		}
+
+		return ranks;
+	}
+}
+
+// https://leetcode.com/problems/perfect-number/
+namespace p507
+{
+	// Solution 1: checking divisors
+	bool checkPerfectNumber(int num)
+	{
+		int sum = 1;
+		for (int i = 2; i * i < num; i++)
+		{
+			if (num % i == 0)
+				sum += i + num / i;
+			if (sum > num)
+				return false;
+		}
+
+		return num != 1 && num == sum;
+	}
+
+	// Solution 2: Euclid-Euler theorem
+	bool checkPerfectNumber2(int num)
+	{
+		const long primes[] = { 2, 3, 5, 7, 13, 17, 19, 31 };
+		for (const auto p : primes)
+			if ((1l << (p - 1l)) * ((1l << p) - 1l) == num)
+				return true;
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/fibonacci-number/
+namespace p509
+{
+	// Solution 1: swapping vars
+	int fib(int n)
+	{
+		int a = 0;
+		int b = 1;
+		while (n != 0)
+		{
+			int sum = a + b;
+			a = b;
+			b = sum;
+			n--;
+		}
+
+		return b;
+	}
+
+	// Solution 2: dynamic programming
+	int fib2(int n)
+	{
+		std::vector<int> fibs(n + 2, 0);
+		fibs[0] = 0;
+		fibs[1] = 1;
+		for (int i = 2; i < n + 1; i++)
+			fibs[i] = fibs[i - 1] + fibs[i - 2];
+
+		return fibs[n];
+	}
+
+	int fibMemo(int n, std::unordered_map<int, int>& cache)
+	{
+		if (auto it = cache.find(n); it != cache.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			cache[n] = fibMemo(n - 1, cache) + fibMemo(n - 2, cache);
+			return cache[n];
+		}
+	}
+
+	// Solution 3: recursion with memoization
+	int fib3(int n)
+	{
+		std::unordered_map<int, int> cache{};
+		cache[0] = 0;
+		cache[1] = 1;
+		return fibMemo(n, cache);
+	}
+}
+
+// https://leetcode.com/problems/detect-capital/
+// TTS: 30:31
+namespace p520
+{
+	// Solution 1: brute force
+	bool detectCapitalUse(const std::string& word)
+	{
+		bool capital = std::tolower(word[0]) != word[0];
+		if (capital && word.length() > 1)
+		{
+			bool secondCapital = std::tolower(word[1]) != word[1];
+			for (int i = 1; i < word.length(); i++)
+			{
+				if ((std::tolower(word[i]) == word[i]) != secondCapital)
+					return false;
+			}
+		}
+		else
+		{
+			bool secondCapital = false;
+			for (int i = 1; i < word.length(); i++)
+			{
+				if ((std::tolower(word[i]) == word[i]) != secondCapital)
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Solution 2: clean
+	bool detectCapitalUse(const std::string& word)
+	{
+		if (word.size() == 1)
+			return true;
+
+		int count = 0;
+		for (const auto c : word)
+			if (std::isupper(c))
+				++count;
+
+		if ((count == 1 && std::isupper(word[0]))
+			|| (count == 0 || count == word.length()))
+		{
+			return true;
+		}
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/longest-uncommon-subsequence-i/
+// TTS: 16:33
+namespace p521
+{
+	// Solution 1: checking substring one-by-one
+	int findLUSlength(std::string& a, std::string& b)
+	{
+		if (a.length() < b.length())
+			std::swap(a, b);
+
+		const int aLength = a.length();
+		const int bLength = b.length();
+
+		// Substrings of decreasing lengths
+		for (int l = aLength; l >= 0; --l)
+		{
+			if (l > bLength)
+				return l;
+
+			for (int j = 0; j <= aLength - l; j++)
+			{
+				std::string substr = a.substr(j, l);
+				bool isSubstr = false;
+				for (int k = 0; k <= bLength - l; k++)
+				{
+					if (b.substr(k, l) == substr)
+					{
+						isSubstr = true;
+						break;
+					}
+				}
+
+				if (!isSubstr)
+					return l;
+			}
+		}
+
+		return -1;
+	}
+
+	// Solution 2: check basic equality
+	int findLUSlength(const std::string& a, const std::string& b)
+	{
+		return (a == b) ? -1 : std::max(a.length(), b.length());
+	}
+}
+
+// https://leetcode.com/problems/minimum-absolute-difference-in-bst/
+// TTS: 11:21
+namespace p530
+{
+	void inorder(TreeNode* node, int& prev, int& diff)
+	{
+		if (!node)
+			return;
+
+		inorder(node->left, node->val, diff);
+		std::cout << prev << ' ' << node->val << '\n';
+		diff = std::min(diff, std::abs(node->val - prev));
+		prev = node->val;
+		inorder(node->right, node->val, diff);
+	}
+
+	int getMinimumDifference(TreeNode* root)
+	{
+		int diff = INT_MAX;
+		int prev = INT_MAX;
+		inorder(root, prev, diff);
+		return diff;
+	}
+}
+
+// https://leetcode.com/problems/reverse-string-ii/
+// TTS: 17:39
+namespace p541
+{
+	void reverse(std::string& str, int left, int right)
+	{
+		while (left < right)
+		{
+			std::swap(str[left], str[right]);
+			++left;
+			--right;
+		}
+	}
+
+	std::string reverseStr(const std::string& s, int k)
+	{
+		const int length = s.length();
+		std::string res = s;
+		const int group = 2 * k;
+		int i{};
+		for (i = 0; i < length; i += group)
+		{
+			if (i + k - 1 < length)
+				reverse(res, i, i + k - 1);
+			else
+				reverse(res, i, length - 1);
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/diameter-of-binary-tree/
+// TTS: 42:41
+namespace p543
+{
+	int dfs(TreeNode* node, int& diameter)
+	{
+		if (!node)
+			return 0;
+
+		int leftHeight = dfs(node->left, diameter);
+		int rightHeight = dfs(node->right, diameter);
+		diameter = std::max(diameter, leftHeight + rightHeight);
+		return std::max(leftHeight, rightHeight) + 1;
+	}
+
+	int diameterOfBinaryTree(TreeNode* root)
+	{
+		int diameter = 0;
+		dfs(root, diameter);
+		return diameter;
+	}
+}
+
+// https://leetcode.com/problems/student-attendance-record-i/
+namespace p551
+{
+	// Solution 1: lengthy
+	bool checkRecord(const std::string& str)
+	{
+		int absent = 0;
+		for (int i = 0; i < str.length(); i++)
+		{
+			if (str[i] == 'L')
+			{
+				int j = i;
+				while (j < str.length() && str[j] == 'L')
+					++j;
+
+				if (j - i >= 3)
+					return false;
+
+				i = j - 1;
+			}
+			else if (str[i] == 'A')
+			{
+				++absent;
+				if (absent >= 2)
+					return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Solution 2: concise
+	bool checkRecord2(const std::string& str)
+	{
+		int absent = 0;
+		int late = 0;
+		for (const auto c : str)
+		{
+			if (c == 'A')
+				++absent;
+			if (c == 'L')
+				++late;
+			else
+				late = 0;
+
+			if (absent >= 2 || late >= 3)
+				return false;
+		}
+
+		return true;
+	}
+}
+
+// https://leetcode.com/problems/maximum-depth-of-n-ary-tree/
+// TTS: 12:14
+namespace p559
+{
+	void dfs(Node* node, int& maxDepth, int currDepth = 1)
+	{
+		if (!node)
+			return;
+
+		for (auto* n : node->children)
+			dfs(n, maxDepth, currDepth + 1);
+
+		maxDepth = std::max(maxDepth, currDepth);
+	}
+
+	// Solution 1: mine
+	int maxDepth(Node* root)
+	{
+		int maxDepth = 0;
+		dfs(root, maxDepth);
+		return maxDepth;
+	}
+
+	// Solution 2: Recursive DFS
+	int maxDepth2(Node* root)
+	{
+		if (!root)
+			return 0;
+
+		int depth = 0;
+		for (auto* child : root->children)
+			depth = std::max(depth, maxDepth2(child));
+
+		return depth + 1;
+	}
+
+	// Solution 3: Recursive DFS using STL
+	int maxDepth3(Node* root)
+	{
+		if (!root)
+			return 0;
+
+		return 1 + std::transform_reduce(root->children.begin(), root->children.end(), 0,
+			[](int acc, int d) {return std::max(acc, d);}, [](auto* node) {return maxDepth3(node);});
+	}
+
+	// Solution 4: BFS
+	int maxDepth4(Node* root)
+	{
+		if (!root)
+			return 0;
+
+		std::queue<Node*> queue{};
+		queue.push(root);
+		int depth = 0;
+		while (!queue.empty())
+		{
+			depth += 1;
+			int breadth = queue.size();
+			for (int i = 0; i < breadth; i++)
+			{
+				auto* node = queue.front();
+				queue.pop();
+				for (auto* child : node->children)
+					if (child)
+						queue.push(child);
+			}
+		}
+
+		return depth;
+	}
+}
+
+// https://leetcode.com/problems/array-partition/
+// TTS: 03:30
+namespace p561
+{
+	// Solution 1: sort
+	int arrayPairSum(std::vector<int>& nums)
+	{
+		std::sort(nums.begin(), nums.end(), std::greater<int>());
+		int sum = 0;
+		for (int i = 0; i < nums.size() - 1; i += 2)
+			sum += std::min(nums[i], nums[i + 1]);
+
+		return sum;
+	}
+
+	// Solution 2: sort 2
+	int arrayPairSum2(std::vector<int>& nums)
+	{
+		std::sort(nums.begin(), nums.end(), std::greater<int>());
+		int sum = 0;
+		for (int i = 1; i < nums.size(); i += 2)
+			sum += nums[i];
+
+		return sum;
+	}
+
+	// Solution 3: bucket sort / frequency counting knowing the range beforehand
+	int arrayPairSum3(const std::vector<int>& nums)
+	{
+		int* buckets = new int[20001] {};
+		for (const auto n : nums)
+			++buckets[n + 10000];	// range starts from -10000 (kinda bad :( )
+
+		int sum = 0;
+		int used = 0;
+		for (int i = 0; used < nums.size(); )
+		{
+			if (buckets[i] == 0)
+			{
+				++i;
+			}
+			else
+			{
+				if (used % 2 == 0)
+					sum += i - 10000;
+
+				--buckets[i];
+				++used;
+			}
+		}
+
+		return sum;
+	}
+}
+
+// https://leetcode.com/problems/binary-tree-tilt/
+// TTS: 12:14
+namespace p563
+{
+	int dfs(TreeNode* node, int& tiltSum)
+	{
+		if (!node)
+			return 0;
+
+		int leftSum = dfs(node->left, tiltSum);
+		int rightSum = dfs(node->right, tiltSum);
+		tiltSum += std::abs(rightSum - leftSum);
+		return leftSum + rightSum + node->val;
+	}
+
+	int findTilt(TreeNode* root)
+	{
+		int res = 0;
+		dfs(root, res);
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/reshape-the-matrix/
+// TTS: 08:10
+namespace p566
+{
+	// Solution 1: 4 indices
+	std::vector<std::vector<int>> matrixReshape(const std::vector<std::vector<int>>& mat, int r, int c)
+	{
+		const int m = mat.size();
+		const int n = mat[0].size();
+		if (r * c != m * n)
+			return mat;	// invalid size
+
+		int i = 0;
+		int j = 0;
+		std::vector<std::vector<int>> reshaped(r, std::vector<int>(c));
+		for (int k = 0; k < m; k++)
+		{
+			for (int l = 0; l < n; l++)
+			{
+				// If end of row, go to next row and reset col index
+				if (j >= c)
+				{
+					++i;
+					j = 0;
+				}
+
+				reshaped[i][j] = mat[k][l];
+				++j;
+			}
+
+		}
+
+		return reshaped;
+	}
+
+	// Solution 2: clean loop
+	std::vector<std::vector<int>> matrixReshape2(const std::vector<std::vector<int>>& mat, int r, int c)
+	{
+		const int m = mat.size();
+		const int n = mat[0].size();
+		if (r * c != m * n)
+			return mat;	// invalid size
+
+		std::vector<std::vector<int>> reshaped(r, std::vector<int>(c));
+		for (int i = 0; i < r * c; i++)
+			reshaped[i / c][i % c] = mat[i / n][i % n];
+
+		return reshaped;
+	}
+}
+
+// https://leetcode.com/problems/subtree-of-another-tree/
+// TTS: a lot
+namespace p572
+{
+	void dfs(TreeNode* node, std::string& traversal)
+	{
+		if (!node)
+		{
+			traversal += " ";
+			return;
+		}
+
+		traversal += std::to_string(node->val);
+		dfs(node->left, traversal);
+		dfs(node->right, traversal);
+	}
+
+	// Solution 1: storing traversal
+	bool isSubtree(TreeNode* root, TreeNode* subRoot)
+	{
+		std::string t1{};
+		std::string t2{};
+		dfs(root, t1);
+		dfs(subRoot, t2);
+
+		for (int i = 0; i < t1.length(); i++)
+		{
+			int j = i;
+			while (j < t2.length() && t1[j] == t2[j])
+				++j;
+
+			if (j - i == t2.length())
+				return true;
+		}
+
+		return false;
+	}
+
+	int getDepth(TreeNode* node, std::vector<TreeNode*>& nodes, int depth)
+	{
+		if (!node)
+			return -1;
+
+		int maxDepth = std::max(getDepth(node->left, nodes, depth), getDepth(node->right, nodes, depth)) + 1;
+		if (maxDepth == depth)
+			nodes.push_back(node);
+
+		return maxDepth;
+	}
+
+	bool identical(TreeNode* t1, TreeNode* t2)
+	{
+		if (!t1 && !t2)
+			return true;
+		if (!t1 || !t2 || t1->val != t2->val)
+			return false;
+
+		return identical(t1->left, t2->left) && identical(t1->right, t2->right);
+	}
+
+	// Solution 2: Checking identical trees
+	bool isSubtree2(TreeNode* t1, TreeNode* t2)
+	{
+		if (!t1 && !t2)
+			return true;
+		if (!t1 || !t2)
+			return false;
+
+		std::vector<TreeNode*> t1Nodes{};
+		int t2Depth = getDepth(t2, t1Nodes, -1);
+		int t1Depth = getDepth(t1, t1Nodes, t2Depth);
+
+		for (TreeNode* n : t1Nodes)
+			if (identical(n, t2))
+				return true;
+
+		return false;
+	}
+
+	std::string serialize(TreeNode* t)
+	{
+		if (!t)
+			return ",#";
+
+		return "," + std::to_string(t->val) + serialize(t->left) + serialize(t->right);
+	}
+
+	std::vector<int> getLPS(const std::string& str)
+	{
+		const int m = str.length();
+		int j = 0;
+		std::vector<int> lps(m);
+		for (int i = 1; i < m; i++)
+		{
+			while (str[i] != str[j] && j > 0)
+				j = lps[j];
+			if (str[i] == str[j])
+			{
+				++j;
+				lps[i] = j;
+			}
+		}
+
+		return lps;
+	}
+
+	bool kmp(const std::string& str, const std::string& pattern)
+	{
+		std::vector<int> lps = getLPS(pattern);
+		const int n = str.length();
+		const int m = pattern.length();
+		int j = 0;
+		for (int i = 0; i < n; i++)
+		{
+			while (str[i] != pattern[j] && j > 0)
+				j = lps[j - 1];
+			if (str[i] == pattern[j])
+			{
+				++j;
+				if (j == m)
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	// Solution 3: DFS + KMP
+	bool isSubtree3(TreeNode* t1, TreeNode* t2)
+	{
+		return kmp(serialize(t1), serialize(t2));
+	}
+}
+
+// https://leetcode.com/problems/distribute-candies/
+// TTS: 06:10
+namespace p575
+{
+	// Solution 1: hashmap
+	int distributeCandies(const std::vector<int>& candyType)
+	{
+		std::unordered_map<int, int> map{};
+		for (const auto n : candyType)
+			++map[n];
+
+		int uniqueCandies = 0;
+		for (auto it = map.begin(); it != map.end(); ++it)
+			++uniqueCandies;
+
+		return std::min(uniqueCandies, static_cast<int>(candyType.size() / 2));
+	}
+
+	// Solution 2: sort
+	int distributeCandies2(std::vector<int>& candyType)
+	{
+		std::sort(candyType.begin(), candyType.end());
+		const int n = candyType.size();
+
+		int uniqueCandies = 1;
+		for (int i = 1; i < n; i++)
+			if (candyType[i] != candyType[i - 1])
+				++uniqueCandies;
+
+		return std::min(uniqueCandies, static_cast<int>(n / 2));
+	}
+
+	// Solution 3: unordered set
+	int distributeCandies3(const std::vector<int>& candyType)
+	{
+		std::unordered_set<int> set(candyType.begin(), candyType.end());
+		return std::min(set.size(), candyType.size() / 2);
+	}
+}
+
 int main()
 {
-	std::vector nums{ 1, 1, 0, 1, 1, 1 };
-	std::cout << p485::findMaxConsecutiveOnes(nums);
 }
 
