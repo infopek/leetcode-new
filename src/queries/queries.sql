@@ -30,3 +30,21 @@ select w1.id
 from Weather w1, Weather w2
 where datediff(w1.recordDate, w2.recordDate) = 1
 and w1.temperature > w2.temperature;
+
+-- https://leetcode.com/problems/game-play-analysis-i/
+-- TTS: 05:01
+select a1.player_id, min(a1.event_date) as first_login
+from Activity a1
+group by a1.player_id;
+
+-- https://leetcode.com/problems/employee-bonus/
+-- TTS: 03:07
+select name, bonus
+from Employee e left join Bonus b on e.empId = b.empId
+where bonus < 1000 or b.empId is null;
+
+-- https://leetcode.com/problems/find-customer-referee/
+-- TTS: 01:16
+select name
+from Customer
+where referee_id is null or referee_id != 2;
