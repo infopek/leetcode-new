@@ -48,3 +48,139 @@ where bonus < 1000 or b.empId is null;
 select name
 from Customer
 where referee_id is null or referee_id != 2;
+
+-- https://leetcode.com/problems/customer-placing-the-largest-number-of-orders/
+-- TTS: 31:42
+{
+    -- Solution 1
+    select customer_number
+    from Orders
+    group by customer_number
+    order by count(customer_number) desc
+    limit 1;
+
+    -- Solution 2: follow-up using subqueries
+    select customer_number
+    from Orders
+    group by customer_number
+    having count(order_number) = 
+    (
+        select max(o_n)
+        from 
+        (
+            select count(order_number) as o_n
+            from Orders
+            group by customer_number
+        ) as sub
+    );
+
+    -- Solution 2: follow-up using cte
+    with cte as
+    (
+        select customer_number,
+        rank() over(order by count(order_number) desc) as order_rank
+        from orders
+        group by customer_number
+    )
+
+    select customer_number from cte
+    where order_rank = 1;
+}
+
+-- https://leetcode.com/problems/big-countries/
+-- TTS: 11:15
+{
+    -- Solution 1: simple
+    select name, population, area
+    from World
+    where area >= 3000000/ or population >= 25000000;
+
+    -- Solution 2: union
+    select name, population, area
+    from World
+    where area >= 3000000
+    union
+    select name, population, area
+    from World
+    where population >= 25000000;
+}
+
+-- https://leetcode.com/problems/classes-more-than-5-students/
+-- TTS: 03:12
+select class
+from Courses
+group by class
+having count(class) >= 5;
+
+-- https://leetcode.com/problems/sales-person/
+-- TTS: 27:14
+select sp.name
+from Orders o
+right join Company c on (o.com_id = c.com_id and c.name = 'RED')
+right join SalesPerson sp on sp.sales_id = o.sales_id
+where o.sales_id is null;
+
+-- https://leetcode.com/problems/triangle-judgement/
+-- TTS: 06:03
+select *, 
+case
+    when x + y > z and x + z > y and y + z > x then 'Yes'
+    else 'No'
+end as triangle
+from Triangle;
+
+-- https://leetcode.com/problems/biggest-single-number/
+-- TTS: 02:06
+{
+    -- Solution 1: fast
+    select max(sub.num) as num
+    from
+    (
+        select num
+        from MyNumbers n
+        group by n.num
+        having count(n.num) = 1
+    ) as sub;
+
+    -- Solution 2: without subquery
+    select if (count(*) = 1, num, null) as num
+    from MyNumbers
+    group by num
+    order by count(*), num desc
+    limit 1;
+}
+
+-- https://leetcode.com/problems/not-boring-movies/
+-- TTS: 01:03
+select *
+from Cinema
+where description != "boring"
+and mod(id, 2) = 1
+order by rating desc;
+
+-- https://leetcode.com/problems/swap-salary/
+-- TTS: 03:42
+{
+    -- Solution 1: case
+    update Salary
+    set sex = case sex
+        when 'm' then 'f'
+        else 'm'
+    end;
+
+    -- Solution 2: ternary operator
+    update Salary
+    set sex = if(sex = 'm', 'f', 'm');
+
+    -- Solution 3: replace()
+    update Salary
+    set sex = replace('fm', sex, '');
+
+    -- Solution 4: math
+    update Salary
+    set sex = char(ascii('f') + ascii('m') - ascii(sex));
+
+    -- Solution 5: xor
+    update Salary
+    set sex = char(ascii('f') ^ ascii('m') ^ ascii(sex));
+}

@@ -3364,7 +3364,342 @@ namespace p575
 	}
 }
 
+// https://leetcode.com/problems/n-ary-tree-preorder-traversal/
+// TTS: 07:33
+namespace p589
+{
+	void dfs(Node* node, std::vector<int>& traversal)
+	{
+		if (!node)
+			return;
+
+		traversal.push_back(node->val);
+		for (auto child : node->children)
+			dfs(child, traversal);
+	}
+
+	std::vector<int> preorder(Node* root)
+	{
+		std::vector<int> res{};
+		dfs(root, res);
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/n-ary-tree-postorder-traversal/
+// TTS: 01:29
+namespace p590
+{
+	void dfs(Node* node, std::vector<int>& traversal)
+	{
+		if (!node)
+			return;
+
+		for (auto child : node->children)
+			dfs(child, traversal);
+
+		traversal.push_back(node->val);
+	}
+
+	std::vector<int> postorder(Node* root)
+	{
+		std::vector<int> res{};
+		dfs(root, res);
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/longest-harmonious-subsequence/
+// TTS: 43:45
+namespace p594
+{
+	// Solution 1: sorting
+	int findLHS(std::vector<int>& nums)
+	{
+		std::sort(nums.begin(), nums.end());
+
+		int i = 0;
+		int longest = 0;
+		while (i < nums.size())
+		{
+			int count = 1;
+			while (i < nums.size() - 1 && nums[i] == nums[i + 1])
+			{
+				++i;
+				++count;
+			}
+
+			int j = i + 1;
+			while (j < nums.size() && std::abs(nums[i] - nums[j]) == 1)
+			{
+				++j;
+				++count;
+			}
+
+			if (j != i + 1)
+				longest = std::max(longest, count);
+			++i;
+		}
+
+		return longest;
+	}
+
+	// Solution 2: sorting v2
+	int findLHS(std::vector<int>& nums)
+	{
+		std::sort(nums.begin(), nums.end());
+
+		int longest = 0;
+		int left = 0;
+		for (int right = 0; right < nums.size(); ++right)
+		{
+			while (nums[right] - nums[left] > 1)
+				++left;
+
+			if (nums[right] - nums[left] == 1)
+				longest = std::max(longest, right - left + 1);
+		}
+
+		return longest;
+	}
+
+	// Solution 2: hashmap
+	int findLHS(const std::vector<int>& nums)
+	{
+		std::unordered_map<int, int> map{};
+		for (auto n : nums)
+			++map[n];
+
+		int longest = 0;
+		for (auto it = map.begin(); it != map.end(); ++it)
+			if (auto it2 = map.find(it->first + 1); it2 != map.end())
+				longest = std::max(longest, it->second + it2->second);
+
+		return longest;
+	}
+}
+
+// https://leetcode.com/problems/range-addition-ii/
+// TTS: 35:31
+namespace p598
+{
+	int maxCount(int m, int n, const std::vector<std::vector<int>>& ops)
+	{
+		int minRow = m;
+		int minCol = n;
+		for (const auto& op : ops)
+		{
+			minRow = std::min(minRow, op[0]);
+			minCol = std::min(minCol, op[1]);
+		}
+
+		return minRow * minCol;
+	}
+}
+
+// https://leetcode.com/problems/minimum-index-sum-of-two-lists/
+// TTS: 14:38
+namespace p599
+{
+	// Solution 1: sorting and hashmap
+	std::vector<std::string> findRestaurant(std::vector<std::string>& list1, std::vector<std::string>& list2)
+	{
+		std::unordered_map<std::string, int> indexMap1{};
+		std::unordered_map<std::string, int> indexMap2{};
+		for (int i = 0; i < list1.size(); i++)
+			indexMap1[list1[i]] = i;
+		for (int i = 0; i < list2.size(); i++)
+			indexMap2[list2[i]] = i;
+
+		std::sort(list1.begin(), list1.end());
+		std::sort(list2.begin(), list2.end());
+
+		int i = 0;
+		int j = 0;
+		int minIdxSum = list1.size() + list2.size();
+		std::vector<std::string> commonStrings{};
+		while (i < list1.size() && j < list2.size())
+		{
+			if (list1[i] == list2[j])
+			{
+				if (indexMap1[list1[i]] + indexMap2[list2[j]] == minIdxSum)
+				{
+					commonStrings.push_back(list1[i]);
+				}
+				else if (indexMap1[list1[i]] + indexMap2[list2[j]] < minIdxSum)
+				{
+					minIdxSum = indexMap1[list1[i]] + indexMap2[list2[j]];
+					commonStrings = { list1[i] };
+				}
+
+				++i;
+				++j;
+			}
+			else if (list1[i] < list2[j])
+			{
+				++i;
+			}
+			else
+			{
+				++j;
+			}
+		}
+
+		return commonStrings;
+	}
+
+	// Solution 2: sorting and hashmap
+	std::vector<std::string> findRestaurant(const std::vector<std::string>& list1, const std::vector<std::string>& list2)
+	{
+		std::unordered_map<std::string, int> map{};
+		const int size1 = list1.size();
+		const int size2 = list2.size();
+		for (int i = 0; i < size1; i++)
+			map[list1[i]] = i;
+
+		std::vector<std::string> res{};
+		int min = size1 + size2;
+		for (int i = 0; i < size2; i++)
+		{
+			if (auto it = map.find(list2[i]);it != map.end())
+			{
+				if (i + it->second == min)
+				{
+					res.clear();
+					res.push_back(list2[i]);
+				}
+				else if (i + it->second < min)
+				{
+					min = i + it->second;
+					res = { list2[i] };
+				}
+			}
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/can-place-flowers/
+// TTS: 37:14
+namespace p605
+{
+	bool canPlaceFlowers(std::vector<int>& flowerbed, int n)
+	{
+		flowerbed.insert(flowerbed.begin(), 0);
+		flowerbed.push_back(0);
+
+		for (int i = 1; i < flowerbed.size() - 1; i++)
+		{
+			if (flowerbed[i - 1] == 0 && flowerbed[i] == 0 && flowerbed[i + 1] == 0)
+			{
+				flowerbed[i] == 1;
+				--n;
+				++i;
+			}
+		}
+
+		return n <= 0;
+	}
+}
+
+// https://leetcode.com/problems/merge-two-binary-trees/
+// TTS: 17:51
+namespace p617
+{
+	void mergeDFS(TreeNode* t1, TreeNode* t2, TreeNode*& merged)
+	{
+		if (!t1 || !t2)
+		{
+			merged = t1 ? t1 : t2;
+			return;
+		}
+
+		merged = new TreeNode(t1->val + t2->val);
+		mergeDFS(t1->left, t2->left, merged->left);
+		mergeDFS(t1->right, t2->right, merged->right);
+	}
+
+	TreeNode* mergeTrees(TreeNode* root1, TreeNode* root2)
+	{
+		TreeNode* merged{};
+		mergeDFS(root1, root2, merged);
+		return merged;
+	}
+
+	// Solution 2: simpler
+	TreeNode* mergeTrees2(TreeNode* root1, TreeNode* root2)
+	{
+		if (!root1 || !root2)
+			return root1 ? root1 : root2;
+
+		root1->val += root2->val;
+		root1->left = mergeTrees2(root1->left, root2->left);
+		root1->right = mergeTrees2(root1->right, root2->right);
+		return root1;
+	}
+}
+
+// https://leetcode.com/problems/maximum-product-of-three-numbers/
+// TTS:
+namespace p628
+{
+	// Solution 1: sorting
+	int maximumProduct(std::vector<int>& nums)
+	{
+		std::sort(nums.begin(), nums.end());
+
+		const int size = nums.size();
+		int prod1 = nums[0] * nums[1] * nums[size - 1];
+		int prod2 = nums[size - 3] * nums[size - 2] * nums[size - 1];
+		return std::max(prod1, prod2);
+	}
+
+	// Solution 2: keeping track of maxes and  mins
+	int maximumProduct(std::vector<int>& nums)
+	{
+		int max1 = INT_MIN;
+		int max2 = INT_MIN;
+		int max3 = INT_MIN;
+
+		int min1 = INT_MAX;
+		int min2 = INT_MAX;
+
+		for (int i = 0; i < nums.size(); i++)
+		{
+			if (nums[i] <= min1)
+			{
+				min2 = min1;
+				min1 = nums[i];
+			}
+			else if (nums[i] <= min2)
+			{
+				min2 = nums[i];
+			}
+
+			if (nums[i] >= max1)
+			{
+				max3 = max2;
+				max2 = max1;
+				max1 = nums[i];
+			}
+			else if (nums[i] >= max2)
+			{
+				max3 = max2;
+				max2 = nums[i];
+			}
+			else if (nums[i] >= max3)
+			{
+				max3 = nums[i];
+			}
+		}
+
+		return std::max(min1 * min2 * max1, max1 * max2 * max3);
+	}
+}
+
 int main()
 {
+
 }
 
