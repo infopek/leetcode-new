@@ -10,9 +10,11 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <map>
 #include <numeric>
 #include <queue>
 #include <ranges>
+#include <set>
 #include <stack>
 #include <stdlib.h>
 #include <string>
@@ -2789,7 +2791,7 @@ namespace p520
 	}
 
 	// Solution 2: clean
-	bool detectCapitalUse(const std::string& word)
+	bool detectCapitalUse2(const std::string& word)
 	{
 		if (word.size() == 1)
 			return true;
@@ -3445,7 +3447,7 @@ namespace p594
 	}
 
 	// Solution 2: sorting v2
-	int findLHS(std::vector<int>& nums)
+	int findLHS2(std::vector<int>& nums)
 	{
 		std::sort(nums.begin(), nums.end());
 
@@ -3464,7 +3466,7 @@ namespace p594
 	}
 
 	// Solution 2: hashmap
-	int findLHS(const std::vector<int>& nums)
+	int findLHS3(const std::vector<int>& nums)
 	{
 		std::unordered_map<int, int> map{};
 		for (auto n : nums)
@@ -3593,7 +3595,7 @@ namespace p605
 		{
 			if (flowerbed[i - 1] == 0 && flowerbed[i] == 0 && flowerbed[i + 1] == 0)
 			{
-				flowerbed[i] == 1;
+				flowerbed[i] = 1;
 				--n;
 				++i;
 			}
@@ -3656,7 +3658,7 @@ namespace p628
 	}
 
 	// Solution 2: keeping track of maxes and  mins
-	int maximumProduct(std::vector<int>& nums)
+	int maximumProduct2(std::vector<int>& nums)
 	{
 		int max1 = INT_MIN;
 		int max2 = INT_MIN;
@@ -3698,8 +3700,565 @@ namespace p628
 	}
 }
 
+// https://leetcode.com/problems/average-of-levels-in-binary-tree/
+// TTS: 04:26
+namespace p637
+{
+	std::vector<double> averageOfLevels(TreeNode* root)
+	{
+		std::vector<double> averages{};
+		std::queue<TreeNode*> q{};
+		q.push(root);
+		while (!q.empty())
+		{
+			int breadth = q.size();
+			double sum = 0.0;
+			for (int i = 0; i < breadth; i++)
+			{
+				TreeNode* node = q.front();
+				q.pop();
+				if (node->right)
+					q.push(node->right);
+				if (node->left)
+					q.push(node->left);
+
+				sum += node->val;
+			}
+			averages.push_back(sum / breadth);
+		}
+
+		return averages;
+	}
+}
+
+// https://leetcode.com/problems/maximum-average-subarray-i/
+// TTS: 39:32
+namespace p643
+{
+	// Solution 1: prefix sum
+	double findMaxAverage(std::vector<int>& nums, int k)
+	{
+		const int size = nums.size();
+
+		// Get prefix sum
+		for (int i = 1; i < size; i++)
+			nums[i] += nums[i - 1];
+
+		double max = nums[k - 1];
+		for (int i = k; i < size; i++)
+			max = std::max(max, static_cast<double>(nums[i] - nums[i - k]));
+
+		return max / k;
+	}
+
+	// Solution 2: sliding window
+	double findMaxAverage2(const std::vector<int>& nums, int k)
+	{
+		double sum = 0.0;
+		double max = std::numeric_limits<double>().lowest();
+		for (int i = 0; i < nums.size(); i++)
+		{
+			if (i < k)
+			{
+				sum += nums[i];
+			}
+			else
+			{
+				max = std::max(max, sum);
+				sum += nums[i] - nums[i - k];
+			}
+		}
+
+		max = std::max(max, sum);
+		return max / k;
+	}
+}
+
+// https://leetcode.com/problems/set-mismatch/
+// TTS: 05:55
+namespace p645
+{
+	// Solution 1: 'hashmap'
+	std::vector<int> findErrorNums(std::vector<int>& nums)
+	{
+		const int n = nums.size();
+		std::vector<bool> seen(n + 1);
+		int duplicate = 0;
+		for (auto num : nums)
+		{
+			if (seen[num])
+				duplicate = num;
+			seen[num] = true;
+		}
+
+		for (int i = 1; i < n + 1; i++)
+			if (!seen[i])
+				return { duplicate, i };
+
+		return {};	// should not be reached
+	}
+
+	// Solution 2: in-place marking
+	std::vector<int> findErrorNums2(std::vector<int>& nums)
+	{
+		std::vector<int> res(2);
+		for (auto n : nums)
+		{
+			if (nums[std::abs(n) - 1] < 0)
+				res[0] = std::abs(n);
+			else
+				nums[std::abs(n) - 1] *= -1;
+		}
+
+		for (int i = 0; i < nums.size(); i++)
+		{
+			if (nums[i] > 0)
+				res[1] = i + 1;
+		}
+
+		return res;
+	}
+
+	// Solution 3: math
+	std::vector<int> findErrorNums3(const std::vector<int>& nums)
+	{
+		const int n = nums.size();
+		int s1 = 0;
+		int s2 = 0;
+		for (auto num : nums)
+		{
+			s1 += num;
+			s2 += num * num;
+		}
+
+		const int diff = n * (n + 1) - s1;
+		const int sqDiff = n * (n + 1) * (2 * n + 1) - s2;
+		const int duplicate = (sqDiff / diff - diff) / 2;
+		return { duplicate, diff + duplicate };
+	}
+}
+
+// https://leetcode.com/problems/two-sum-iv-input-is-a-bst/
+// TTS: 05:27
+namespace p653
+{
+	void dfs(TreeNode* t, bool& res, std::unordered_map<int, bool>& seen, int target)
+	{
+		if (!t)
+			return;
+
+		seen[t->val] = true;
+		if (seen[target - t->val] && target - t->val != t->val)
+			res = true;
+		dfs(t->left, res, seen, target);
+		dfs(t->right, res, seen, target);
+	}
+
+	// Solution 1: hashmap
+	bool findTarget(TreeNode* root, int k)
+	{
+		std::unordered_map<int, bool> seen{};
+		bool res = false;
+		dfs(root, res, seen, k);
+		return res;
+	}
+
+	void dfs2(TreeNode* t, std::vector<int>& inorder)
+	{
+		if (!t)
+			return;
+
+		dfs2(t->left, inorder);
+		inorder.push_back(t->val);
+		dfs2(t->right, inorder);
+	}
+
+	// Solution 2: using bst
+	bool findTarget2(TreeNode* root, int k)
+	{
+		std::vector<int> inorder{};
+		dfs2(root, inorder);
+
+		int left = 0;
+		int right = inorder.size() - 1;
+		while (left < right)
+		{
+			if (inorder[left] + inorder[right] == k)
+				return true;
+			else if (inorder[left] + inorder[right] < k)
+				++left;
+			else
+				--right;
+		}
+
+		return false;
+	}
+}
+
+// https://leetcode.com/problems/robot-return-to-origin/
+// TTS: 00:56
+namespace p657
+{
+	bool judgeCircle(const std::string& moves)
+	{
+		std::vector<int> pos(2);
+		for (auto move : moves)
+		{
+			switch (move)
+			{
+			case 'U':
+				++pos[1];
+				break;
+			case 'D':
+				--pos[1];
+				break;
+			case 'R':
+				++pos[0];
+				break;
+			case 'L':
+				--pos[0];
+				break;
+			default:
+				break;
+			}
+		}
+
+		return pos[0] == 0 && pos[1] == 0;
+	}
+}
+
+// https://leetcode.com/problems/image-smoother/
+// TTS: 04:29
+namespace p661
+{
+	void smooth(const std::vector<std::vector<int>>& img, std::vector<std::vector<int>>& smoothed, int r, int c)
+	{
+		int count = 9;
+		int sum = 0;
+		for (int i = -1; i <= 1; i++)
+		{
+			for (int j = -1; j <= 1; j++)
+			{
+				int row = r + i;
+				int col = c + j;
+				if (row >= 0 && row < img.size() && col >= 0 && col < img[0].size())
+					sum += img[row][col];
+				else
+					--count;
+			}
+		}
+
+		smoothed[r][c] = sum / count;
+	}
+
+	std::vector<std::vector<int>> imageSmoother(std::vector<std::vector<int>>& img)
+	{
+		const int m = img.size();
+		const int n = img[0].size();
+
+		std::vector<std::vector<int>> smoothed(m, std::vector<int>(n, 0));
+		for (int i = 0; i < m; i++)
+			for (int j = 0; j < n; j++)
+				smooth(img, smoothed, i, j);
+
+		return smoothed;
+	}
+}
+
+// https://leetcode.com/problems/second-minimum-node-in-a-binary-tree/
+// TTS: 09:45
+namespace p671
+{
+	void dfs(TreeNode* t, int firstMin, int& secondMin)
+	{
+		if (!t)
+			return;
+
+		if ((secondMin < 0 && t->val != firstMin) || (t->val <= secondMin && t->val != firstMin))
+			secondMin = t->val;
+
+		dfs(t->left, firstMin, secondMin);
+		dfs(t->right, firstMin, secondMin);
+	}
+
+	int findSecondMinimumValue(TreeNode* root)
+	{
+		int firstMin = root->val;
+		int secondMin = -1;
+		dfs(root, firstMin, secondMin);
+		return secondMin;
+	}
+}
+
+// https://leetcode.com/problems/longest-continuous-increasing-subsequence/
+// TTS: 04:37
+namespace p674
+{
+	int findLengthOfLCIS(std::vector<int>& nums)
+	{
+		int left = 0;
+		int right = 1;
+		int maxLength = 1;
+		while (left < nums.size())
+		{
+			while (right < nums.size() && nums[right] > nums[right - 1])
+				++right;
+
+			maxLength = std::max(maxLength, right - left);
+			left = right;
+			++right;
+		}
+
+		return maxLength;
+	}
+}
+
+// https://leetcode.com/problems/valid-palindrome-ii/
+// TTS: 24:03
+namespace p680
+{
+	bool isValidRec(const std::string& str, int left, int right, int count)
+	{
+		if (count > 1)
+			return false;
+
+		while (left < right)
+		{
+			if (str[left] == str[right])
+			{
+				++left;
+				--right;
+			}
+			else
+			{
+				return isValidRec(str, left + 1, right, count + 1)
+					|| isValidRec(str, left, right - 1, count + 1);
+			}
+		}
+
+		return true;
+	}
+
+	bool validPalindrome(const std::string& str)
+	{
+		return isValidRec(str, 0, str.size() - 1, 0);
+	}
+}
+
+// https://leetcode.com/problems/baseball-game/
+// TTS: 10:23
+namespace p682
+{
+	int calPoints(std::vector<std::string>& operations)
+	{
+		std::stack<int> st{};
+		for (const auto& op : operations)
+		{
+			if (op == "+")
+			{
+				int prev = st.top();
+				st.pop();
+				int rec = st.top() + prev;
+				st.push(prev);
+				st.push(rec);
+			}
+			else if (op == "D")
+			{
+				st.push(st.top() * 2);
+			}
+			else if (op == "C")
+			{
+				st.pop();
+			}
+			else
+			{
+				st.push(std::atoi(op.c_str()));
+			}
+		}
+
+		int res = 0;
+		while (!st.empty())
+		{
+			res += st.top();
+			st.pop();
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/binary-number-with-alternating-bits/
+// TTS: 14:28
+namespace p693
+{
+	// Solution 1: check remainder
+	bool hasAlternatingBits(int n)
+	{
+		while (n != 0)
+		{
+			int rem = n % 2;
+			if (rem == (n >> 1) % 2)
+				return false;
+
+			n >>= 1;
+		}
+
+		return true;
+	}
+
+	// Solution 2: twice right shift with xor
+	bool hasAlternatingBits2(int n)
+	{
+		n ^= n >> 2;
+		return (n & (n - 1)) == 0;
+	}
+}
+
+// https://leetcode.com/problems/count-binary-substrings/
+// TTS: 36:29
+namespace p696
+{
+	int countBinarySubstrings(const std::string& str)
+	{
+		int res = 0;
+		int i = 0;
+		while (i < str.length())
+		{
+			int j = i + 1;
+			while (j < str.length() && str[j] == str[i])
+				++j;
+			int count1 = j - i;
+
+			while (j < str.length() && str[j] != str[i])
+				++j;
+			int count2 = j - (i + count1);
+
+			res += std::min(count1, count2);
+			i += count1;
+		}
+
+		return res;
+	}
+}
+
+// https://leetcode.com/problems/degree-of-an-array/
+// TTS: 14:29
+namespace p697
+{
+	int findShortestSubArray(std::vector<int>& nums)
+	{
+		std::unordered_map<int, int> freq{};
+		std::unordered_map<int, std::pair<int, int>> ranges{};
+		std::vector<int> mostFreqs{};
+		int max = 0;
+		for (int i = 0; i < nums.size(); ++i)
+		{
+			++freq[nums[i]];
+			if (freq[nums[i]] > max)
+			{
+				max = freq[nums[i]];
+				mostFreqs = {};
+				mostFreqs.push_back(nums[i]);
+			}
+			else if (freq[nums[i]] == max)
+			{
+				mostFreqs.push_back(nums[i]);
+			}
+
+			if (ranges.find(nums[i]) == ranges.end())
+				ranges[nums[i]].first = i;
+			else
+				ranges[nums[i]].second = i;
+		}
+
+		if (max == 1)
+			return 1;
+
+		int minRange = nums.size();
+		for (auto n : mostFreqs)
+			minRange = std::min(minRange, ranges[n].second - ranges[n].first + 1);
+
+		return minRange;
+	}
+}
+
+// https://leetcode.com/problems/search-in-a-binary-search-tree/
+// TTS: 01:33
+namespace p700
+{
+	TreeNode* searchBST(TreeNode* root, int val)
+	{
+		if (!root)
+			return nullptr;
+
+		if (root->val == val)
+			return root;
+		if (root->val < val)
+			return searchBST(root->right, val);
+		else
+			return searchBST(root->left, val);
+	}
+}
+
+// https://leetcode.com/problems/kth-largest-element-in-a-stream/
+// TTS: 11:08
+namespace p703
+{
+	class KthLargest
+	{
+	public:
+		KthLargest(int k, const std::vector<int>& nums)
+			: m_k{ k }
+		{
+			m_k = k;
+			for (auto n : nums)
+			{
+				m_pq.push(n);
+				if (m_pq.size() > m_k)
+					m_pq.pop();
+			}
+		}
+
+		int add(int val)
+		{
+			m_pq.push(val);
+			if (m_pq.size() > m_k)
+				m_pq.pop();
+			return m_pq.top();
+		}
+
+	private:
+		std::priority_queue<int, std::vector<int>, std::greater<int>> m_pq{};
+		int m_k{};
+	};
+}
+
+// https://leetcode.com/problems/binary-search/
+// TTS: 02:23
+namespace p704
+{
+	int search(const std::vector<int>& nums, int target)
+	{
+		int left = 0;
+		int right = nums.size() - 1;
+		while (left <= right)
+		{
+			int mid = left + (right - left) / 2;
+			if (nums[mid] == target)
+				return mid;
+			else if (nums[mid] < target)
+				left = mid + 1;
+			else
+				right = mid - 1;
+		}
+
+		return -1;
+	}
+}
+
 int main()
 {
-
+	std::string str = "aguokepatgbnvfqmgmlcupuufxoohdfpgjdmysgvhmvffcnqxjjxqncffvmhvgsymdjgpfdhooxfuupuculmgmqfvnbgtapekouga";
+	std::cout << p680::validPalindrome(str);
 }
 
